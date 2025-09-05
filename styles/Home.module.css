@@ -1,0 +1,186 @@
+.main {
+  min-height: 100vh;
+  padding: 24px;
+  background-color: rgb(28, 32, 36);
+}
+
+.container {
+  max-width: 840px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.searchCard {
+  position: relative;
+}
+
+.searchContainer {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+  flex-direction: row;
+}
+
+.searchContainer > button {
+  flex-shrink: 0;
+  width: auto;
+}
+
+.inputContainer {
+  position: relative;
+  flex: 1;
+}
+
+.selectedCard {
+  background-color: #4f524f;
+}
+
+.analysisContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.businessHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(84, 109, 255, 0.2);
+  margin-bottom: 24px;
+}
+
+.businessHeader button {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.businessHeaderActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.refreshButton {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background-color: #047857 !important;
+  border-color: #047857 !important;
+}
+
+.refreshButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.employeeNote {
+  background-color: rgba(5, 150, 105, 0.1);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  color: #10b981 !important;
+  font-size: 0.875rem;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+.currentStats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breakdown {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: rgba(84, 109, 255, 0.1);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(84, 109, 255, 0.2);
+}
+
+.reviewRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reviewSlider {
+  margin-top: 4px;
+}
+
+.targetSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ratingOptions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.selected {
+  background-color: rgb(84, 109, 255) !important;
+  color: rgb(252, 252, 253) !important;
+}
+
+.calculateButton {
+  margin-top: 16px;
+  align-self: flex-start;
+}
+
+.results {
+  padding: 24px;
+  background-color: rgba(84, 109, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(84, 109, 255, 0.2);
+}
+
+.error {
+  color: rgb(253, 81, 53);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 100%;
+  }
+
+  .searchContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ratingOptions {
+    justify-content: center;
+  }
+}

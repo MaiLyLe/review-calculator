@@ -1,0 +1,106 @@
+.main {
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  background-color: #f5f5f5;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchCard {
+  position: relative;
+}
+
+.searchContainer {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  position: relative;
+}
+
+.selectedCard {
+  background-color: #e8f5e8;
+}
+
+.overlayContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.currentStats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breakdown {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.targetSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ratingOptions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.selected {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+.calculateButton {
+  margin-top: 16px;
+  align-self: flex-start;
+}
+
+.results {
+  padding: 20px;
+  background-color: #e8f5e8;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.error {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .searchContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .ratingOptions {
+    justify-content: center;
+  }
+}

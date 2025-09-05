@@ -1,0 +1,184 @@
+.button {
+  /* Layout and positioning */
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  text-align: start;
+  min-width: 150px;
+  
+  /* Background */
+  background-attachment: scroll;
+  background-clip: border-box;
+  background-color: rgb(84, 109, 255);
+  background-image: none;
+  background-origin: padding-box;
+  background-position: 0% 0%;
+  background-repeat: repeat;
+  background-size: auto;
+  
+  /* Border */
+  border-bottom-color: rgb(84, 109, 255);
+  border-bottom-left-radius: 12.7386px;
+  border-bottom-right-radius: 12.7386px;
+  border-bottom-style: solid;
+  border-bottom-width: 0px;
+  border-left-color: rgb(84, 109, 255);
+  border-left-style: solid;
+  border-left-width: 0px;
+  border-right-color: rgb(84, 109, 255);
+  border-right-style: solid;
+  border-right-width: 0px;
+  border-top-color: rgb(84, 109, 255);
+  border-top-left-radius: 12.7386px;
+  border-top-right-radius: 12.7386px;
+  border-top-style: solid;
+  border-top-width: 0px;
+  
+  /* Box model */
+  box-shadow: none;
+  margin: 0px;
+  padding: 0.646544px;
+  width: auto;
+  height: 63.7188px;
+  
+  /* Typography */
+  color: rgb(0, 0, 238);
+  direction: ltr;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+  
+  /* Interactions */
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  
+  /* Transitions */
+  transition-behavior: normal, normal;
+  transition-delay: 0s, 0s;
+  transition-duration: 0.4s, 0.4s;
+  transition-property: border-color, background-color;
+  transition-timing-function: ease, ease;
+  
+  /* Outline */
+  outline-color: rgb(0, 0, 238);
+  outline-style: none;
+  outline-width: 0px;
+  
+  vertical-align: baseline;
+}
+
+.button:hover {
+  background-color: rgb(78, 91, 171, 1);
+
+
+
+}
+
+.button:active {
+  background-color: rgb(64, 89, 235);
+}
+
+.button:disabled {
+  background-color: rgba(204, 204, 204, 0.5);
+  color: rgba(255, 255, 255, 1);
+  cursor: not-allowed;
+}
+
+
+.button > span {
+  /* Display and positioning */
+  display: block;
+  position: relative;
+  text-align: center;
+  
+  /* Background */
+  background-color: rgba(0, 0, 0, 0);
+  background-image: none;
+  
+  /* Typography */
+  color: rgb(252, 252, 253);
+  font-family: league-spartan-v2, sans-serif;
+  font-size: 16.8188px;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 23.5463px;
+  -webkit-font-smoothing: antialiased;
+  
+  /* Box model */
+  margin: 0px;
+  padding: 0px;
+  width: auto;
+  height: 23.5469px;
+  
+  /* Border */
+  border: none;
+  
+  /* Interactions */
+  cursor: pointer;
+  pointer-events: auto;
+  
+  /* Transitions */
+  transition-duration: 0.4s;
+  transition-property: color;
+  transition-timing-function: ease;
+  
+  /* Text properties */
+  direction: ltr;
+  vertical-align: baseline;
+}
+
+.sm {
+  padding: 6px 12px;
+  font-size: 8px;
+  line-height: 1.4em;
+  border-radius: 10px;
+}
+
+.md {
+  padding: 8px 16px;
+  font-size: 10px;
+  line-height: 1.4em;
+  border-radius: 12px;
+}
+
+.lg {
+  padding: 12px 24px;
+  font-size: 12px;
+  line-height: 1.4em;
+  border-radius: 14px;
+}
+
+.fullWidth {
+  width: 100%;
+  min-width: 100%;
+}
+
+/* Responsive adjustments */
+@media screen and (min-width: 320px) and (max-width: 750px) {
+  .button {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .sm {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  
+  .md {
+    padding: 10px 20px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  
+  .lg {
+    padding: 14px 28px;
+    font-size: 17px;
+    border-radius: 10px;
+  }
+}

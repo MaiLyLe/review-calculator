@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.currentRating {
+  color: rgba(252, 252, 253, 0.7) !important;
+  font-size: 14px !important;
+}
+
+.sliderContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.label {
+  font-family: league-spartan-v2, sans-serif;
+  font-size: 14px;
+  color: rgba(252, 252, 253, 0.6);
+  font-weight: 300;
+}
+
+.warning {
+  color: rgb(253, 81, 53) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .currentRating {
+    font-size: 12px !important;
+  }
+  
+  .label {
+    font-size: 12px;
+  }
+}

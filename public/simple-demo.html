@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Rating Calculator Popup Demo</title>
+    <style>
+        body {
+            font-family: 'League Spartan', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .demo-container {
+            text-align: center;
+            color: white;
+            max-width: 600px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .trigger-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .demo-info {
+            margin-top: 3rem;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .demo-info h3 {
+            margin-top: 0;
+            color: #fff;
+        }
+        
+        .demo-info ul {
+            text-align: left;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .demo-info li {
+            margin-bottom: 8px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="demo-container">
+        <h1>Rating Calculator</h1>
+        <p>Test the simplified popup with single-click close functionality</p>
+        
+        <div class="trigger-buttons">
+            <button onclick="RatingPopup.open({animation: 'slideUp'})">
+                🚀 Slide Up Animation
+            </button>
+            <button onclick="RatingPopup.open({animation: 'fadeScale'})">
+                ✨ Fade Scale Animation
+            </button>
+            <button onclick="RatingPopup.close()">
+                ❌ Close Popup
+            </button>
+        </div>
+        
+        <div class="demo-info">
+            <h3>Fixed Issues:</h3>
+            <ul>
+                <li>✅ Single click close (no more multiple clicks needed)</li>
+                <li>✅ No event listener conflicts</li>
+                <li>✅ Proper cleanup on close</li>
+                <li>✅ ESC key support</li>
+                <li>✅ Click backdrop to close</li>
+                <li>✅ Prevents background scrolling</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="simple-popup.js"></script>
+</body>
+</html>
