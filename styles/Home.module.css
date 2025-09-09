@@ -1,15 +1,56 @@
 .main {
   min-height: 100vh;
-  padding: 24px;
-  background-color: rgb(28, 32, 36);
+  padding: 12px;
+  position: relative;
+}
+
+/* Employee mode - dark background */
+.main.employeeMode {
+  background-color: #1c2024;
+}
+
+/* Transparent mode - transparent background */
+.main.transparentMode {
+  background-color: #1c2024;
+}
+
+/* Backdrop for centered search form - removed visual effects for clean white background */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+/* Employee mode backdrop - dark background */
+.backdrop.employeeMode {
+  background-color: #1c2024;
+}
+
+/* Transparent mode backdrop - transparent background */
+.backdrop.transparentMode {
+  background-color: transparent;
+}
+
+.backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .container {
-  max-width: 840px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
 }
 
 .searchCard {
@@ -18,7 +59,7 @@
 
 .searchContainer {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
   position: relative;
   flex-direction: row;
@@ -35,140 +76,67 @@
 }
 
 .selectedCard {
-  background-color: #4f524f;
+  background-color: rgba(84, 109, 255, 0.1);
+  border: 1px solid rgba(84, 109, 255, 0.2);
 }
 
 .analysisContent {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .businessHeader {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-bottom: 16px;
+  gap: 6px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(84, 109, 255, 0.2);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .businessHeader button {
   align-self: flex-start;
-  margin-top: 8px;
-}
-
-.businessHeaderActions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.refreshButton {
-  background-color: #059669 !important;
-  border-color: #059669 !important;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.refreshButton:hover:not(:disabled) {
-  background-color: #047857 !important;
-  border-color: #047857 !important;
-}
-
-.refreshButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  margin-top: 6px;
 }
 
 .employeeNote {
   background-color: rgba(5, 150, 105, 0.1);
   border: 1px solid rgba(5, 150, 105, 0.3);
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 8px;
-  color: #10b981 !important;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 6px;
+  color: white !important;
+  font-size: 0.8rem;
 }
 
 .loadingContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 40px 20px;
+  gap: 12px;
+  padding: 24px 16px;
 }
 
-.currentStats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Logo positioning */
+.logo {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+  max-width: 120px;
+  height: auto;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
 }
 
-.breakdown {
-  margin-top: 16px;
-  padding: 16px;
-  background-color: rgba(84, 109, 255, 0.1);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  border: 1px solid rgba(84, 109, 255, 0.2);
-}
-
-.reviewRow {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.reviewSlider {
-  margin-top: 4px;
-}
-
-.targetSection {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.ratingOptions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.selected {
-  background-color: rgb(84, 109, 255) !important;
-  color: rgb(252, 252, 253) !important;
-}
-
-.calculateButton {
-  margin-top: 16px;
-  align-self: flex-start;
-}
-
-.results {
-  padding: 24px;
-  background-color: rgba(84, 109, 255, 0.1);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  border: 1px solid rgba(84, 109, 255, 0.2);
-}
-
-.error {
-  color: rgb(253, 81, 53);
-  font-weight: 500;
+.logo:hover {
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
   .main {
-    padding: 16px;
+    padding: 8px;
   }
 
   .container {
@@ -180,7 +148,27 @@
     align-items: stretch;
   }
 
-  .ratingOptions {
-    justify-content: center;
+  .logoFixed {
+    display: none !important;
+  }
+
+  .logoRelative {
+    position: relative !important;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    max-width: 180px;
+    margin: 40px auto 20px auto;
+    display: block;
+    z-index: auto;
+  }
+}
+/* 13-inch MacBook breakpoint (around 1440px width) */
+@media (min-width: 1024px) and (max-width: 1450px) {
+  .logo {
+    bottom: 0px !important;
+    right: 24px;
+    max-width: 100px;
   }
 }

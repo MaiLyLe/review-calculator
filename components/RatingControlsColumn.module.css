@@ -1,0 +1,477 @@
+/* Rating Controls Column Styles */
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+
+.breakdown {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.breakdown > p {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: white;
+}
+
+.reviewRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.disabledRow {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Mobile: Stack label and slider vertically */
+@media (max-width: 768px) {
+  .reviewRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 8px 0;
+  }
+
+  .reviewLabel {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+  }
+
+  .reviewSlider {
+    width: 100%;
+  }
+}
+
+.reviewLabel {
+  min-width: 65px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  display: flex;
+  align-items: center;
+  height: 20px; /* Match slider height for perfect alignment */
+}
+
+.reviewSlider {
+  flex: 1;
+  margin: 0;
+}
+
+.targetSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.infoIconContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.infoIcon {
+  font-size: 14px;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  user-select: none;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.infoIcon:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.infoIcon:focus {
+  outline: 2px solid #546dff;
+  outline-offset: 2px;
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  min-width: 250px;
+  white-space: normal;
+  text-align: center;
+  z-index: 1000;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #333;
+}
+
+/* For mobile devices, we'll use a tap-friendly approach */
+@media (max-width: 768px) {
+  .infoIcon {
+    font-size: 16px;
+    padding: 8px;
+    min-width: 32px;
+    min-height: 32px;
+    /* Add visual feedback for touch */
+    -webkit-tap-highlight-color: rgba(84, 109, 255, 0.2);
+    border-radius: 50%;
+  }
+
+  .infoIcon:active {
+    background-color: rgba(84, 109, 255, 0.1);
+    transform: scale(0.95);
+  }
+
+  .tooltip {
+    max-width: 200px;
+    font-size: 20px;
+    left: -200px;
+    transform: none;
+    /* Ensure tooltip is above other elements */
+    z-index: 1001;
+  }
+
+  .tooltip::before {
+    left: 120px;
+  }
+}
+
+.ratingSelector {
+  display: inline-flex;
+  flex-wrap: wrap;
+  background: rgba(84, 109, 255, 0.08);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 2px;
+  border: 1px solid rgba(84, 109, 255, 0.15);
+  max-width: 100%;
+}
+
+.ratingOption {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-width: 60px;
+}
+
+.ratingOption:hover {
+  background: rgba(84, 109, 255, 0.1);
+}
+
+.ratingRadio {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ratingLabel {
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  transition: color 0.2s ease;
+  font-family: league-spartan-v2, sans-serif;
+}
+
+.selectedOption {
+  background: rgb(84, 109, 255) !important;
+  box-shadow: 0 2px 4px rgba(84, 109, 255, 0.3);
+}
+
+.selectedOption .ratingLabel {
+  color: white !important;
+  font-weight: 600;
+}
+
+.ratingSectionTitle {
+  margin-bottom: 4px;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: rgba(84, 109, 255, 0.05);
+  border: 1px solid rgba(84, 109, 255, 0.2);
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 150px;
+  width: 100%;
+  position: relative;
+}
+
+.resultsHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(84, 109, 255, 0.15);
+}
+
+.resultsTitle {
+  margin: 0;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  font-family: league-spartan-v2, sans-serif;
+}
+
+.distributionTitle {
+  margin: 0;
+  font-size: 20px !important;
+}
+
+.distributionExplanation {
+  font-size: 13px !important;
+  color: white !important;
+  line-height: 1.4 !important;
+  margin-bottom: 6px !important;
+  font-style: italic;
+}
+
+.currentRatingDisplay {
+  padding: 6px 10px;
+  border: 1px solid rgba(84, 109, 255, 0.2);
+  border-radius: 6px;
+  margin: 6px 0 8px 0;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.currentRatingDisplayTitle {
+  margin: 0;
+  line-height: 1.3;
+}
+
+.noRemovalsMessage {
+  text-align: center;
+  color: white;
+  font-style: italic;
+  padding: 6px 10px;
+}
+
+.targetRatingBadge {
+  font-size: 20px;
+  font-family: league-spartan-v2, sans-serif;
+}
+
+.removalBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+}
+
+.removalSummary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.totalReviews {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgb(84, 109, 255);
+  font-family: league-spartan-v2, sans-serif;
+  line-height: 1;
+}
+
+.summaryText {
+  font-size: 17px;
+  color: white;
+  line-height: 1;
+  font-family: league-spartan-v2, sans-serif;
+}
+
+.removalDetails {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(84, 109, 255, 0.1);
+  justify-content: center;
+}
+
+.removalRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 4px;
+  min-width: 55px;
+}
+
+.starRating {
+  color: #fbbf24;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.removalCount {
+  font-weight: 600;
+  color: white;
+  font-size: 16px;
+  font-family: league-spartan-v2, sans-serif;
+  line-height: 1;
+}
+
+.projectedResult {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(84, 109, 255, 0.15);
+}
+
+.projectedLabel {
+  font-size: 17px;
+  color: white;
+}
+
+.projectedRating {
+  font-size: 22px;
+  font-weight: 700;
+  color: #22c55e;
+  font-family: league-spartan-v2, sans-serif;
+}
+
+.error {
+  color: white;
+  font-weight: 500;
+}
+
+/* Mobile responsiveness - prioritize readability over fitting everything */
+@media (max-width: 1024px) {
+  .rightColumn {
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .targetSection {
+    gap: 15px;
+  }
+
+  .ratingSelector {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .ratingOption {
+    min-width: 60px;
+    padding: 14px 10px;
+    flex: 0 0 calc(25% - 8px);
+  }
+
+  .ratingLabel {
+    font-size: 18px; /* Keep readable size */
+  }
+
+  .reviewLabel {
+    font-size: 16px; /* Increase from 13px */
+    min-width: 70px;
+  }
+
+  .breakdown {
+    margin-top: 12px;
+    gap: 10px;
+    padding: 0px !important;
+  }
+
+  .results {
+    padding: 18px;
+    gap: 15px;
+    width: 100%;
+    position: static !important;
+  }
+  .removalBreakdown {
+    position: static !important;
+  }
+  .ratingSectionTitle {
+    font-size: 22px !important;
+  }
+
+  .distributionTitle {
+    font-size: 23px !important;
+  }
+
+  .distributionExplanation {
+    font-size: 15px !important; /* Increase from 13px */
+  }
+
+  .removalCount {
+    font-size: 18px; /* Increase from 16px */
+  }
+
+  .starRating {
+    font-size: 20px; /* Increase from 18px */
+  }
+
+  .removalDetails {
+    gap: 4px !important;
+  }
+
+  .targetSection {
+    padding-bottom: 25px;
+  }
+  .noRemovalsMessage {
+    padding: 4px !important;
+  }
+}

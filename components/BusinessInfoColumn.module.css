@@ -1,0 +1,260 @@
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: calc(100vh - 180px);
+  justify-content: center;
+}
+
+.businessInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(84, 109, 255, 0.2);
+  position: relative;
+}
+
+.businessHeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.refreshButton {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refreshButton:hover:not(:disabled) {
+  color: white;
+  background-color: rgba(107, 114, 128, 0.1);
+}
+
+.refreshButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: white;
+}
+
+.backButton {
+  background: none;
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  border: none;
+  position: absolute;
+  top: -40px;
+  left: -15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 20px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.backButton:hover {
+  color: white;
+  background-color: rgba(84, 109, 255, 0.1);
+  transform: translateX(-2px);
+}
+
+.backButton:active {
+  transform: translateX(-1px);
+}
+
+.backButtonContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.backChevrons {
+  font-size: 20px;
+  line-height: 1;
+  margin-top: -4px;
+}
+
+.backText {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+  line-height: 1;
+  color: white;
+}
+
+.currentStats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(84, 109, 255, 0.1);
+  background-color: rgba(84, 109, 255, 0.05);
+}
+
+.starDistribution {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 0;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(84, 109, 255, 0.1);
+  background-color: rgba(84, 109, 255, 0.05);
+}
+
+.starDistribution > p {
+  margin-bottom: 12px;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.starLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: white;
+}
+
+.stars {
+  color: #fbbf24;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.starCount {
+  font-weight: 600;
+  color: rgb(84, 109, 255);
+  min-width: 45px;
+  text-align: right;
+  font-size: 16px;
+}
+
+.statsText {
+  color: rgb(84, 109, 255) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  font-family: league-spartan-v2, sans-serif !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+}
+
+/* Mobile responsiveness - improve layout and readability */
+@media (max-width: 768px) {
+  .leftColumn {
+    min-height: auto;
+    justify-content: flex-start;
+    margin-bottom: 32px;
+    gap: 16px; /* Reduced gap for tighter layout */
+    padding: 0 16px; /* Add horizontal padding for better alignment */
+  }
+
+  .backButton {
+    position: relative;
+    top: -4px;
+    left: 0;
+    margin-bottom: 4px; /* Reduced spacing around back button */
+    align-self: flex-start;
+    padding: 6px 10px; /* Reduced padding */
+    min-width: 70px; /* Slightly smaller */
+  }
+
+  .backChevrons {
+    font-size: 18px; /* Slightly smaller chevrons */
+  }
+
+  .backText {
+    font-size: 12px; /* Slightly larger back text */
+  }
+
+  .businessInfo {
+    padding-top: 0;
+    padding-bottom: 12px; /* Reduced bottom padding */
+    gap: 8px; /* Reduced gap between elements */
+    text-align: left; /* Ensure left alignment */
+  }
+
+  /* Increase font sizes for better mobile readability */
+  .businessInfo h2 {
+    font-size: 24px !important; /* Larger business name */
+    text-align: left;
+    margin: 0;
+  }
+
+  .businessInfo p {
+    font-size: 22px !important; /* Larger address */
+    text-align: left;
+    font-family: league-spartan-v2, sans-serif;
+    margin: 0;
+  }
+
+  .currentStats {
+    padding: 16px; /* Increased padding */
+    gap: 8px; /* Reduced gap */
+    text-align: left; /* Left align stats */
+  }
+
+  .starDistribution {
+    margin-top: 0;
+    padding: 16px; /* Increased padding */
+    gap: 8px; /* Reduced gap */
+    text-align: left; /* Left align distribution */
+  }
+
+  .starDistribution > p {
+    margin-bottom: 8px; /* Reduced margin */
+    text-align: left;
+  }
+
+  .starRow {
+    padding: 6px 0; /* Reduced padding */
+  }
+
+  .stars {
+    font-size: 22px; /* Larger stars for better visibility */
+  }
+
+  .starCount {
+    font-size: 16px; /* Larger count numbers */
+    min-width: 40px;
+  }
+
+  .starLabel {
+    font-size: 16px; /* Larger star labels */
+  }
+
+  .statsText {
+    font-size: 21px !important; /* Larger stats text */
+    text-align: left !important;
+  }
+
+  .refreshButton {
+    font-size: 16px; /* Larger refresh button text */
+    padding: 8px 12px; /* Increased padding for easier tapping */
+  }
+}

@@ -103,6 +103,10 @@ class ServerCache {
       .toLowerCase()
       .trim()}`;
   }
+
+  generateRatingKey(place_id: string): string {
+    return `rating:${place_id}`;
+  }
 }
 
 // Singleton instance for server-side caching

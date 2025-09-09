@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_5" data-name="Layer 5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1182.11 448.29">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #4f5ca9;
+        stroke: #283894;
+        stroke-miterlimit: 10;
+        stroke-width: 1.5px;
+      }
+
+      .cls-2 {
+        fill: #283894;
+      }
+
+      .cls-3 {
+        letter-spacing: -.07em;
+      }
+
+      .cls-4 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-5 {
+        fill: #273c92;
+        font-family: LeagueSpartan-Bold, 'League Spartan';
+        font-size: 120px;
+        font-variation-settings: 'wght' 700;
+        font-weight: 700;
+      }
+
+      .cls-6 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-7 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-8 {
+        letter-spacing: .05em;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" x="131.29" y="164.62" width="28.2" height="28.2"/>
+  <rect class="cls-2" x="205.75" y="142.81" width="28.2" height="28.2"/>
+  <rect class="cls-2" x="155.54" y="200.53" width="31.59" height="31.59"/>
+  <rect class="cls-2" x="303.52" y="142.25" width="28.2" height="28.2"/>
+  <rect class="cls-2" x="137.31" y="257.69" width="28.2" height="28.2"/>
+  <rect class="cls-2" x="284.34" y="206.55" width="31.96" height="31.96"/>
+  <rect class="cls-2" x="335.86" y="256.75" width="32.15" height="32.15"/>
+  <rect class="cls-2" x="226.99" y="232.69" width="18.05" height="18.05"/>
+  <rect class="cls-2" x="201.61" y="278.19" width="22.56" height="22.56"/>
+  <rect class="cls-2" x="278.14" y="278" width="17.49" height="17.49"/>
+  <rect class="cls-2" x="259.34" y="181.92" width="20.68" height="20.68"/>
+  <rect class="cls-2" x="86.54" y="219.52" width="24.26" height="24.26"/>
+  <rect class="cls-2" x="371.96" y="194.52" width="20.68" height="20.68"/>
+  <rect class="cls-2" x="387.01" y="229.68" width="20.68" height="20.68"/>
+  <rect class="cls-2" x="267.98" y="328.77" width="31.02" height="31.02"/>
+  <path class="cls-1" d="M99.51,232.69l41.74,28.39-41.74-28.39Z"/>
+  <path class="cls-1" d="M134.49,188.69l-34.03,45.5,34.03-45.5Z"/>
+  <path class="cls-1" d="M181.68,230.99l54.34,9.78-54.34-9.78Z"/>
+  <path class="cls-1" d="M227.93,249.04l-17.11,32.53,17.11-32.53Z"/>
+  <path class="cls-1" d="M227.56,166.31l34.6,18.8-34.6-18.8Z"/>
+  <path class="cls-1" d="M304.27,167.44l-25.95,16.73,25.95-16.73Z"/>
+  <path class="cls-1" d="M206.88,286.09h75.96-75.96Z"/>
+  <path class="cls-1" d="M309.54,231.93l38.55,32.72-38.55-32.72Z"/>
+  <path class="cls-1" d="M340.56,284.02l-43.06,46.63,43.06-46.63Z"/>
+  <path class="cls-1" d="M386.44,213.32l9.03,17.11-9.03-17.11Z"/>
+  <text class="cls-5" transform="translate(418.69 236)"><tspan class="cls-8"><tspan x="0" y="0">WEISS</tspan></tspan><tspan class="cls-6" x="0" y="106">ST</tspan><tspan class="cls-4" x="125.7" y="106">R</tspan><tspan class="cls-3" x="189.6" y="106">A</tspan><tspan class="cls-7" x="261.66" y="106">TEGIES</tspan></text>
+</svg>

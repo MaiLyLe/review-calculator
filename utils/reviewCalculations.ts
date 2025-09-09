@@ -1,8 +1,15 @@
 import { ReviewBreakdown, CalculationResult } from "@/types";
 
+// More accurate rounding function that handles floating-point precision issues
+const preciseRound = (num: number, decimals: number): number => {
+  // Use Number.EPSILON to handle floating-point precision issues
+  const factor = Math.pow(10, decimals);
+  return Math.round((num + Number.EPSILON) * factor) / factor;
+};
+
 // Google-style rounding function - rounds to 1 decimal place like Google does
 const googleRound = (rating: number): number => {
-  return Math.round(rating * 10) / 10;
+  return preciseRound(rating, 1);
 };
 
 export const calculateReviewsToRemove = (
@@ -17,16 +24,15 @@ export const calculateReviewsToRemove = (
     breakdown.four_star +
     breakdown.five_star;
 
-  // Calculate current weighted score
+  // Calculate the actual score from the breakdown for accuracy
   const currentScore =
-    breakdown.one_star * 1 +
-    breakdown.two_star * 2 +
-    breakdown.three_star * 3 +
+    breakdown.five_star * 5 +
     breakdown.four_star * 4 +
-    breakdown.five_star * 5;
+    breakdown.three_star * 3 +
+    breakdown.two_star * 2 +
+    breakdown.one_star * 1;
 
   // Calculate minimum removals needed (greedy approach - remove worst reviews first)
-  // Apply 94% success rate buffer to account for realistic removal expectations
   const calculateMinimalRemovals = (): CalculationResult => {
     let tempBreakdown = { ...breakdown };
     let tempScore = currentScore;
@@ -39,8 +45,14 @@ export const calculateReviewsToRemove = (
       fiveStar: 0,
     };
 
-    while (tempTotal > 0 && tempScore / tempTotal < targetRating) {
+    // Remove reviews one by one, starting with the worst, until we reach the target
+    // Use precise calculation to avoid floating-point issues
+    while (
+      tempTotal > 0 &&
+      preciseRound(tempScore / tempTotal, 3) < targetRating
+    ) {
       // Remove worst reviews first (1-star, then 2-star, etc.)
+      // NEVER remove 5-star reviews - they help achieve higher targets
       if (tempBreakdown.one_star > 0) {
         tempBreakdown.one_star--;
         removed.oneStar++;
@@ -61,63 +73,14 @@ export const calculateReviewsToRemove = (
         removed.fourStar++;
         tempScore -= 4;
         tempTotal--;
-      } else if (tempBreakdown.five_star > 0) {
-        tempBreakdown.five_star--;
-        removed.fiveStar++;
-        tempScore -= 5;
-        tempTotal--;
       } else {
-        break; // No more reviews to remove
+        // No more reviews below 5-star to remove
+        break;
       }
     }
 
-    // Apply 94% success rate buffer - calculate additional removals needed
-    const totalRemovals = Object.values(removed).reduce(
-      (sum, val) => sum + val,
-      0
-    );
-    const bufferedRemovals = Math.ceil(totalRemovals / 0.94); // Increase by ~6.4% to account for 94% success rate
-    const additionalRemovals = bufferedRemovals - totalRemovals;
-
-    // Add buffer removals (prioritize worst reviews)
-    let additionalRemoved = 0;
-    while (additionalRemoved < additionalRemovals && tempTotal > 0) {
-      if (tempBreakdown.one_star > 0) {
-        tempBreakdown.one_star--;
-        removed.oneStar++;
-        tempScore -= 1;
-        tempTotal--;
-        additionalRemoved++;
-      } else if (tempBreakdown.two_star > 0) {
-        tempBreakdown.two_star--;
-        removed.twoStar++;
-        tempScore -= 2;
-        tempTotal--;
-        additionalRemoved++;
-      } else if (tempBreakdown.three_star > 0) {
-        tempBreakdown.three_star--;
-        removed.threeStar++;
-        tempScore -= 3;
-        tempTotal--;
-        additionalRemoved++;
-      } else if (tempBreakdown.four_star > 0) {
-        tempBreakdown.four_star--;
-        removed.fourStar++;
-        tempScore -= 4;
-        tempTotal--;
-        additionalRemoved++;
-      } else if (tempBreakdown.five_star > 0) {
-        tempBreakdown.five_star--;
-        removed.fiveStar++;
-        tempScore -= 5;
-        tempTotal--;
-        additionalRemoved++;
-      } else {
-        break; // No more reviews to remove
-      }
-    }
-
-    const finalRating = tempTotal > 0 ? tempScore / tempTotal : 0;
+    const finalRating =
+      tempTotal > 0 ? preciseRound(tempScore / tempTotal, 3) : 0;
 
     return {
       targetRating,
@@ -128,56 +91,8 @@ export const calculateReviewsToRemove = (
     };
   };
 
-  // Calculate how many 5-star reviews needed to be added
-  const calculateAdditions = (): CalculationResult => {
-    let neededFiveStars = 0;
-    let tempScore = currentScore;
-    let tempTotal = totalReviews;
-
-    while (
-      (tempScore + neededFiveStars * 5) / (tempTotal + neededFiveStars) <
-      targetRating
-    ) {
-      neededFiveStars++;
-      if (neededFiveStars > 1000) break; // Safety limit
-    }
-
-    const finalRating =
-      (tempScore + neededFiveStars * 5) / (tempTotal + neededFiveStars);
-
-    return {
-      targetRating,
-      reviewsToRemove: {
-        oneStar: 0,
-        twoStar: 0,
-        threeStar: 0,
-        fourStar: 0,
-        fiveStar: 0,
-      },
-      reviewsToAdd: { fiveStar: neededFiveStars },
-      projectedRating: googleRound(finalRating),
-      strategy: "add",
-    };
-  };
-
-  const removalResult = calculateMinimalRemovals();
-  const additionResult = calculateAdditions();
-
-  // Return the strategy that requires fewer total actions
-  const totalRemovals = Object.values(removalResult.reviewsToRemove).reduce(
-    (sum, val) => sum + val,
-    0
-  );
-  const totalAdditions = additionResult.reviewsToAdd.fiveStar;
-
-  if (
-    totalRemovals <= totalAdditions &&
-    removalResult.projectedRating >= targetRating
-  ) {
-    return removalResult;
-  } else {
-    return additionResult;
-  }
+  // We only do removals, not additions
+  return calculateMinimalRemovals();
 };
 
 export const formatInstructions = (result: CalculationResult): string => {

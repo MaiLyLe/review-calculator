@@ -43,6 +43,12 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  pagination?: {
+    totalCount: number;
+    currentOffset: number;
+    currentCount: number;
+    hasMore: boolean;
+  };
 }
 
 export type ButtonSize = "sm" | "md" | "lg";

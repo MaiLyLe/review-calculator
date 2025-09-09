@@ -1,0 +1,36 @@
+/* Rating Analysis Main Container Styles */
+.analysisContent {
+  width: 100%;
+}
+
+/* Two-column layout for desktop */
+.analysisGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr;
+  gap: 40px;
+  margin-top: 20px;
+  min-height: calc(100vh - 180px);
+  padding: 24px;
+}
+
+.error {
+  color: white;
+  font-weight: 500;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 1024px) {
+  .analysisGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    min-height: auto;
+    padding: 0;
+    padding-bottom: 100px !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1450px) {
+  .analysisGrid {
+    padding-bottom: 100px !important;
+  }
+}

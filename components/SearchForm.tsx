@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Typography } from "@/components/Typography";
-import { SearchResultsDropdown } from "@/components/Dropdown";
+import { SearchResults } from "@/components/SearchResults";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useBusinessSearch } from "@/hooks/useBusinessSearch";
 import { BusinessSearchResult } from "@/types";
@@ -11,26 +12,36 @@ import styles from "./SearchForm.module.css";
 
 interface SearchFormProps {
   onBusinessSelect: (business: BusinessSearchResult) => void;
+  onSearchStateChange?: (hasResults: boolean) => void;
 }
 
-export const SearchForm: React.FC<SearchFormProps> = ({ onBusinessSelect }) => {
+export const SearchForm: React.FC<SearchFormProps> = ({
+  onBusinessSelect,
+  onSearchStateChange,
+}) => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [lastSearchTime, setLastSearchTime] = useState(0);
   const [isThrottled, setIsThrottled] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastSearchQuery, setLastSearchQuery] = useState("");
+  const [lastPostalCode, setLastPostalCode] = useState("");
+
+  // Check if this is employee mode
+  const isEmployeeMode = router.query["for-employees"] === "true";
 
   const {
     results,
     loading: searchLoading,
     error: searchError,
+    pagination,
     search,
     clearResults,
   } = useBusinessSearch();
-
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = async () => {
     const now = Date.now();
@@ -64,25 +75,42 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onBusinessSelect }) => {
       return;
     }
 
-    if (!postalCode.trim()) {
+    // Postal code is only required for non-employee mode
+    if (!isEmployeeMode && !postalCode.trim()) {
       setValidationError("PLZ ist erforderlich.");
       return;
     }
 
     setValidationError("");
-    setShowDropdown(true);
+    setShowResults(true);
+
     setLastSearchTime(now);
-    await search(searchQuery, postalCode);
+    setCurrentPage(1);
+    setLastSearchQuery(searchQuery);
+    setLastPostalCode(postalCode);
+    await search(searchQuery, postalCode || "", 1);
   };
+
+  console.log("showResults", showResults);
 
   const handleBusinessSelect = (business: BusinessSearchResult) => {
     onBusinessSelect(business);
-    setShowDropdown(false);
+    // Reset all search-related state
+    setShowResults(false);
     clearResults();
-    // Reset form
     setSearchQuery("");
     setPostalCode("");
     setValidationError("");
+    setCurrentPage(1);
+    setLastSearchQuery("");
+    setLastPostalCode("");
+  };
+
+  const handlePageChange = async (page: number) => {
+    if (lastSearchQuery && (lastPostalCode || isEmployeeMode)) {
+      setCurrentPage(page);
+      await search(lastSearchQuery, lastPostalCode || "", page);
+    }
   };
 
   // Set mounted state to prevent hydration issues
@@ -90,55 +118,80 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onBusinessSelect }) => {
     setIsMounted(true);
   }, []);
 
-  // Handle click outside dropdown
+  // Auto-select business if there's only one result
   useEffect(() => {
-    if (!isMounted) return;
+    if (results.length === 1 && !searchLoading && showResults) {
+      // Small delay to allow user to see the result briefly before auto-selecting
+      const timer = setTimeout(() => {
+        handleBusinessSelect(results[0]);
+      }, 500); // 500ms delay for better UX
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
+      return () => clearTimeout(timer);
     }
+  }, [results, searchLoading, showResults]);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showDropdown, isMounted]);
+  // Hide results when there's an error or no results after search
+  useEffect(() => {
+    if (searchError) {
+      setShowResults(false);
+    } else if (results.length === 0 && !searchLoading && showResults) {
+      // Keep results visible for a moment to show "no results" message
+      const timer = setTimeout(() => {
+        setShowResults(false);
+      }, 3000); // Hide after 3 seconds if no results
+
+      return () => clearTimeout(timer);
+    }
+  }, [results, searchError, searchLoading, showResults]);
+
+  // Update showResults based on actual results and loading state
+  useEffect(() => {
+    if (!searchLoading && results.length === 0 && showResults) {
+      // If we're not loading and have no results, but showResults is true,
+      // we should keep it true briefly to show "no results" message
+      // The timeout in the previous useEffect will handle hiding it
+    } else if (results.length > 0) {
+      // Ensure showResults is true when we have results
+      setShowResults(true);
+    }
+  }, [results.length, searchLoading, showResults]);
+
+  // Notify parent about search state changes
+  useEffect(() => {
+    const hasResults = showResults && (results.length > 0 || searchLoading);
+    onSearchStateChange?.(hasResults);
+  }, [showResults, results.length, searchLoading, onSearchStateChange]);
+
+  // Determine if search form should be centered or positioned
+  const isSearchFormCentered =
+    !showResults && results.length === 0 && !searchLoading;
 
   return (
-    <div className={styles.searchForm}>
+    <div
+      className={`${styles.searchForm} ${
+        isSearchFormCentered ? styles.centered : styles.positioned
+      }`}
+    >
+      <Typography variant="h1">Rating Calculator</Typography>
       <Typography variant="description">
-        Schritt 1: Unternehmen suchen
+        Finden Sie raus, wie viele Google-Bewertungen entfernt werden müssen, um
+        Ihr Wunsch-Rating zu erreichen.
       </Typography>
 
       <div className={styles.searchContainer}>
-        <div className={styles.inputContainer} ref={dropdownRef}>
+        <div className={styles.inputContainer}>
           <Input
-            placeholder="Unternehmensname eingeben..."
+            placeholder="Unternehmensname"
             value={searchQuery}
             onChange={setSearchQuery}
             onEnter={handleSearch}
             name="businessName"
           />
-          {isMounted && showDropdown && (
-            <SearchResultsDropdown
-              results={results}
-              onSelect={handleBusinessSelect}
-              isVisible={showDropdown}
-            />
-          )}
         </div>
 
         <div className={styles.inputContainer}>
           <Input
-            placeholder="PLZ eingeben..."
+            placeholder={isEmployeeMode ? "PLZ(optional)" : "PLZ"}
             value={postalCode}
             onChange={setPostalCode}
             onEnter={handleSearch}
@@ -148,7 +201,12 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onBusinessSelect }) => {
 
         <Button
           onClick={handleSearch}
-          disabled={searchLoading || !searchQuery || !postalCode || isThrottled}
+          disabled={
+            searchLoading ||
+            !searchQuery ||
+            (!isEmployeeMode && !postalCode) ||
+            isThrottled
+          }
         >
           {searchLoading ? (
             <LoadingSpinner size="sm" color="rgb(252, 252, 253)" />
@@ -159,6 +217,19 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onBusinessSelect }) => {
           )}
         </Button>
       </div>
+
+      {/* Search Results with Pagination */}
+      {isMounted && (
+        <SearchResults
+          results={results}
+          onSelect={handleBusinessSelect}
+          isVisible={showResults && (results.length > 0 || searchLoading)}
+          isLoading={searchLoading}
+          onPageChange={handlePageChange}
+          currentPage={currentPage}
+          pagination={pagination} // Pass the entire pagination object
+        />
+      )}
 
       {isMounted && validationError && (
         <Typography variant="description" className={styles.error}>
