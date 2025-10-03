@@ -21,6 +21,7 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
   const [refreshingRatings, setRefreshingRatings] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [isRefreshThrottled, setIsRefreshThrottled] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Check for employee mode query parameter
   useEffect(() => {
@@ -30,24 +31,86 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
     }
   }, [router.isReady, router.query]);
 
-  // Initialize rating data when component mounts or business changes
+  // Fetch fresh data immediately when component mounts or business changes
   useEffect(() => {
-    if (
-      selectedBusiness.rating &&
-      selectedBusiness.reviews_count &&
-      selectedBusiness.rating_distribution
-    ) {
-      const newRatingData: ReviewStats = {
-        place_id: selectedBusiness.place_id,
-        rating: selectedBusiness.rating,
-        reviews_count: selectedBusiness.reviews_count,
-        rating_distribution: selectedBusiness.rating_distribution,
-        votes_count: selectedBusiness.reviews_count,
-      };
-      setRatingData(newRatingData);
-    } else {
-      setRatingData(null);
-    }
+    const fetchFreshData = async () => {
+      console.log(
+        `🔍 RATING ANALYSIS - Fetching fresh data for: ${selectedBusiness.title}`
+      );
+      setRatingData(null); // Clear old data to show loading
+
+      try {
+        const response = await fetch("/api/rating", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            place_id: selectedBusiness.place_id,
+            businessName: selectedBusiness.title,
+            businessLocation: selectedBusiness.selectedCity?.name || "Germany",
+            bypassCache: false, // Use cache for initial load (24h cache)
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          console.log(`✅ RATING ANALYSIS - Fresh data received:`, data.data);
+          setRatingData(data.data);
+          setIsInitialLoading(false);
+        } else {
+          console.error(
+            `❌ RATING ANALYSIS - Failed to fetch data:`,
+            data.error
+          );
+          // Fallback to basic data from search if available
+          if (selectedBusiness.rating && selectedBusiness.reviews_count) {
+            const fallbackData: ReviewStats = {
+              place_id: selectedBusiness.place_id,
+              rating: selectedBusiness.rating,
+              reviews_count: selectedBusiness.reviews_count,
+              rating_distribution: {
+                five_star: 0,
+                four_star: 0,
+                three_star: 0,
+                two_star: 0,
+                one_star: 0,
+              },
+              votes_count: selectedBusiness.reviews_count,
+            };
+            setRatingData(fallbackData);
+            setIsInitialLoading(false);
+          } else {
+            setIsInitialLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ RATING ANALYSIS - Error fetching data:`, error);
+        // Fallback to basic data from search if available
+        if (selectedBusiness.rating && selectedBusiness.reviews_count) {
+          const fallbackData: ReviewStats = {
+            place_id: selectedBusiness.place_id,
+            rating: selectedBusiness.rating,
+            reviews_count: selectedBusiness.reviews_count,
+            rating_distribution: {
+              five_star: 0,
+              four_star: 0,
+              three_star: 0,
+              two_star: 0,
+              one_star: 0,
+            },
+            votes_count: selectedBusiness.reviews_count,
+          };
+          setRatingData(fallbackData);
+          setIsInitialLoading(false);
+        } else {
+          setIsInitialLoading(false);
+        }
+      }
+    };
+
+    fetchFreshData();
   }, [selectedBusiness]);
 
   const handleRefreshRatings = async () => {
@@ -74,47 +137,34 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
     setIsRefreshThrottled(false);
 
     try {
-      // Call search API with bypass cache flag for fresh data
-      const response = await fetch("/api/search", {
+      // Use the original city from input field for Google Reviews API
+      const businessLocation = selectedBusiness.selectedCity?.name || "Germany";
+
+      // Call rating API directly with bypass cache flag for fresh rating data
+      const response = await fetch("/api/rating", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          query: selectedBusiness.title,
-          postalCode: "", // We'll extract from address if needed
-          bypassCache: true, // Force fresh data
+          place_id: selectedBusiness.place_id,
+          businessName: selectedBusiness.title,
+          businessLocation: businessLocation,
+          bypassCache: false, // Use cache to avoid unnecessary API calls
         }),
       });
 
       const result = await response.json();
 
-      if (result.success && result.data.length > 0) {
-        // Find the same business in fresh results
-        const freshBusiness =
-          result.data.find(
-            (b: BusinessSearchResult) =>
-              b.place_id === selectedBusiness.place_id
-          ) || result.data[0]; // Fallback to first result
+      if (result.success && result.data) {
+        // Update with fresh rating data from Google Reviews API
+        setRatingData(result.data);
 
-        // Update with fresh data
-        if (
-          freshBusiness.rating &&
-          freshBusiness.reviews_count &&
-          freshBusiness.rating_distribution
-        ) {
-          const freshRatingData: ReviewStats = {
-            place_id: freshBusiness.place_id,
-            rating: freshBusiness.rating,
-            reviews_count: freshBusiness.reviews_count,
-            rating_distribution: freshBusiness.rating_distribution,
-            votes_count: freshBusiness.votes_count,
-          };
-          setRatingData(freshRatingData);
-
-          // The sliders will be reset automatically by the RatingControlsColumn component
-          // when ratingData is updated
-        }
+        // The sliders will be reset automatically by the RatingControlsColumn component
+        // when ratingData is updated
+        console.log(
+          "🔥 FRESH RATING DATA: Updated with latest Google Reviews data"
+        );
       } else {
         // Error handling is now done in RatingControlsColumn if needed
         console.warn("Keine aktuellen Bewertungsdaten verfügbar.");
@@ -128,12 +178,26 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
 
   return (
     <>
-      {!ratingData && (
+      {isInitialLoading && (
+        <div className={styles.loadingContainer}>
+          <Typography variant="h3" className={styles.loadingTitle}>
+            Lade aktuelle Bewertungsdaten...
+          </Typography>
+          <Typography
+            variant="description"
+            className={styles.loadingDescription}
+          >
+            Wir holen die neuesten Daten für {selectedBusiness.title}
+          </Typography>
+          <div className={styles.spinner}>⏳</div>
+        </div>
+      )}
+      {!isInitialLoading && !ratingData && (
         <Typography variant="description" className={styles.error}>
           Keine Bewertungsdaten verfügbar für dieses Unternehmen.
         </Typography>
       )}
-      {ratingData && (
+      {!isInitialLoading && ratingData && (
         <div className={styles.analysisContent}>
           <div className={styles.analysisGrid}>
             {/* Left Column - Business Info and Star Distribution */}

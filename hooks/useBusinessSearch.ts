@@ -11,7 +11,11 @@ interface UseBusinessSearchReturn {
     currentCount: number;
     hasMore: boolean;
   } | null;
-  search: (query: string, postalCode?: string, page?: number) => Promise<void>;
+  search: (
+    query: string,
+    locationCoordinate?: string,
+    page?: number
+  ) => Promise<void>;
   clearResults: () => void;
 }
 
@@ -27,7 +31,7 @@ export const useBusinessSearch = (): UseBusinessSearchReturn => {
   } | null>(null);
 
   const search = useCallback(
-    async (query: string, postalCode?: string, page: number = 1) => {
+    async (query: string, locationCoordinate?: string, page: number = 1) => {
       if (!query.trim()) {
         setResults([]);
         return;
@@ -42,12 +46,17 @@ export const useBusinessSearch = (): UseBusinessSearchReturn => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query, postalCode, page }),
+          body: JSON.stringify({ query, locationCoordinate, page }),
         });
 
         const data: ApiResponse<BusinessSearchResult[]> = await response.json();
 
         if (data.success && data.data) {
+          console.log(
+            `🔍 SEARCH RESULTS: Found ${data.data.length} businesses`
+          );
+
+          // Set results directly from search API
           setResults(data.data);
           setPagination(data.pagination || null);
         } else {

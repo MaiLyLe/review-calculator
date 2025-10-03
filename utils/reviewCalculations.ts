@@ -9,7 +9,7 @@ const preciseRound = (num: number, decimals: number): number => {
 
 // Google-style rounding function - rounds to 1 decimal place like Google does
 const googleRound = (rating: number): number => {
-  return preciseRound(rating, 1);
+  return preciseRound(rating, 2);
 };
 
 export const calculateReviewsToRemove = (

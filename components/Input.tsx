@@ -1,5 +1,5 @@
-import React from 'react';
-import styles from './Input.module.css';
+import React, { forwardRef } from "react";
+import styles from "./Input.module.css";
 
 interface InputProps {
   label?: string;
@@ -7,53 +7,84 @@ interface InputProps {
   value: string;
   onChange: (value: string) => void;
   onEnter?: () => void;
-  type?: 'text' | 'number';
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  type?: "text" | "number";
   disabled?: boolean;
   hasError?: boolean;
   name?: string;
   id?: string;
+  className?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  placeholder,
-  value,
-  onChange,
-  onEnter,
-  type = 'text',
-  disabled = false,
-  hasError = false,
-  name,
-  id,
-}) => {
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && onEnter) {
-      onEnter();
-    }
-  };
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      label,
+      placeholder,
+      value,
+      onChange,
+      onEnter,
+      onKeyDown,
+      onFocus,
+      onBlur,
+      type = "text",
+      disabled = false,
+      hasError = false,
+      name,
+      id,
+      className,
+    },
+    ref
+  ) => {
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && onEnter) {
+        onEnter();
+      }
+    };
 
-  const inputId = id || `input_${Math.random().toString(36).substr(2, 9)}`;
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (onKeyDown) {
+        onKeyDown(e);
+      }
+      // Still handle Enter for backward compatibility
+      if (e.key === "Enter" && onEnter && !onKeyDown) {
+        onEnter();
+      }
+    };
 
-  return (
-    <div className={styles.container}>
-      {label && (
-        <label htmlFor={inputId} className={styles.label}>
-          {label}
-        </label>
-      )}
-      <div className={styles.inputWrapper}>
-        <input
-          id={inputId}
-          name={name}
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={`${styles.input} ${hasError ? styles.inputError : ''}`}
-        />
+    const inputId = id || `input_${Math.random().toString(36).substr(2, 9)}`;
+
+    return (
+      <div className={styles.container}>
+        {label && (
+          <label htmlFor={inputId} className={styles.label}>
+            {label}
+          </label>
+        )}
+        <div className={styles.inputWrapper}>
+          <input
+            ref={ref}
+            id={inputId}
+            name={name}
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`${styles.input} ${hasError ? styles.inputError : ""} ${
+              className || ""
+            }`}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+Input.displayName = "Input";

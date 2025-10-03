@@ -57,6 +57,12 @@
   margin-top: 0.25rem;
 }
 
+.required::after {
+  content: " *";
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
 @media (min-width: 768px) {
   .searchContainer {
     flex-direction: row;
@@ -79,5 +85,8 @@
   }
   .searchForm {
     padding: 14px;
+  }
+  .description {
+    font-size: 18px;
   }
 }

@@ -5,6 +5,13 @@ export interface BusinessSearchResult {
   rating?: number;
   reviews_count?: number;
   rating_distribution?: ReviewBreakdown;
+  selectedCity?: {
+    name: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  };
 }
 
 export interface ReviewBreakdown {

@@ -2,8 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  min-height: calc(100vh - 180px);
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .businessInfo {
@@ -256,5 +255,13 @@
   .refreshButton {
     font-size: 16px; /* Larger refresh button text */
     padding: 8px 12px; /* Increased padding for easier tapping */
+  }
+}
+
+@media (min-width: 1440px) {
+  .leftColumn {
+    height: 600px !important;
+    justify-content: space-between;
+    gap: 20px;
   }
 }

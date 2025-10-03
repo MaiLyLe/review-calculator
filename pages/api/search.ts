@@ -64,8 +64,14 @@ async function makeDataForSeoRequest(
 
   const data: DataForSeoResponse = await response.json();
   const businessCount = data.tasks?.[0]?.result?.[0]?.items?.length || 0;
+  const taskId = data.tasks?.[0]?.id || "unknown";
+
   console.log(
     `✅ DATAFORSEO SUCCESS: Found ${businessCount} businesses (${duration}ms)`
+  );
+  console.log(`🆔 DATAFORSEO TASK ID: ${taskId}`);
+  console.log(
+    `📋 FULL TASK INFO: Task ${taskId}, Status: ${data.tasks?.[0]?.status_code}, Message: ${data.tasks?.[0]?.status_message}`
   );
 
   if (data.status_code !== 20000) {
@@ -105,11 +111,11 @@ async function performCascadingSearch(
   currentOffset: number;
   currentCount: number;
 }> {
-  // Generate cache key based on search query, postal code, and page
-  const postalCode = baseRequestBody.postalCode || "unknown";
+  // Generate cache key based on search query, location, and page
+  const locationKey = baseRequestBody.locationIdentifier || "unknown";
   const cacheKey = `${serverCache.generateBusinessSearchKey(
     query,
-    postalCode
+    locationKey
   )}:page${page}`;
 
   // Check cache first (unless bypassing)
@@ -124,23 +130,25 @@ async function performCascadingSearch(
 
     if (cachedResult) {
       console.log(
-        `🟢 BUSINESS CACHE HIT: "${query}" in ${postalCode} -> ${cachedResult.businesses.length} businesses (${cachedResult.searchType})`
+        `🟢 BUSINESS CACHE HIT: "${query}" in ${locationKey} -> ${cachedResult.businesses.length} businesses (${cachedResult.searchType})`
       );
       console.log(`💾 CACHE KEY: ${cacheKey}`);
       return cachedResult;
     }
 
     console.log(
-      `🔴 BUSINESS CACHE MISS: "${query}" in ${postalCode} - performing cascading search`
+      `🔴 BUSINESS CACHE MISS: "${query}" in ${locationKey} - performing cascading search`
     );
     console.log(`💾 CACHE KEY: ${cacheKey}`);
   } else {
     console.log(
-      `🔄 BUSINESS CACHE BYPASS: "${query}" in ${postalCode} - forcing fresh data`
+      `🔄 BUSINESS CACHE BYPASS: "${query}" in ${locationKey} - forcing fresh data`
     );
     console.log(`💾 CACHE KEY: ${cacheKey} (will be overwritten)`);
   }
   // Try 1: Search by title
+  console.log(`🎯 ATTEMPTING: Title search for "${query}"`);
+  const titleStartTime = Date.now();
   try {
     const titleRequest = {
       ...baseRequestBody,
@@ -154,6 +162,10 @@ async function performCascadingSearch(
       password
     );
     const titleBusinesses = extractBusinesses(titleData);
+    const titleDuration = Date.now() - titleStartTime;
+    console.log(
+      `🎯 TITLE SEARCH: ${titleDuration}ms - Found ${titleBusinesses.length} businesses`
+    );
 
     if (titleBusinesses.length > 0) {
       // Extract pagination info from DataForSEO response
@@ -168,20 +180,25 @@ async function performCascadingSearch(
         totalCount,
         currentOffset,
         currentCount,
+        taskId: titleData.tasks?.[0]?.id,
       };
-      // Cache the result for 24 hours
-      serverCache.set(cacheKey, result, 24 * 60 * 60 * 1000);
+      // Cache the result for 2 hours (fresher data)
+      serverCache.set(cacheKey, result, 2 * 60 * 60 * 1000);
       console.log(
-        `💾 BUSINESS CACHED (title): "${query}" in ${postalCode} -> ${titleBusinesses.length} businesses for 24h`
+        `💾 BUSINESS CACHED (title): "${query}" in ${locationKey} -> ${titleBusinesses.length} businesses for 24h`
       );
       console.log(`✅ CASCADING SEARCH SUCCESS: Found results by title search`);
       return result;
     }
   } catch (error) {
+    const titleDuration = Date.now() - titleStartTime;
+    console.log(`❌ TITLE SEARCH FAILED: ${titleDuration}ms - ${error}`);
     // Continue to next search type if title search fails
   }
 
   // Try 2: Search by description
+  console.log(`📝 ATTEMPTING: Description search for "${query}"`);
+  const descriptionStartTime = Date.now();
   try {
     const descriptionRequest = {
       ...baseRequestBody,
@@ -195,6 +212,10 @@ async function performCascadingSearch(
       password
     );
     const descriptionBusinesses = extractBusinesses(descriptionData);
+    const descriptionDuration = Date.now() - descriptionStartTime;
+    console.log(
+      `📝 DESCRIPTION SEARCH: ${descriptionDuration}ms - Found ${descriptionBusinesses.length} businesses`
+    );
 
     if (descriptionBusinesses.length > 0) {
       // Extract pagination info from DataForSEO response
@@ -210,11 +231,12 @@ async function performCascadingSearch(
         totalCount,
         currentOffset,
         currentCount,
+        taskId: descriptionData.tasks?.[0]?.id,
       };
-      // Cache the result for 24 hours
-      serverCache.set(cacheKey, result, 24 * 60 * 60 * 1000);
+      // Cache the result for 2 hours (fresher data)
+      serverCache.set(cacheKey, result, 2 * 60 * 60 * 1000);
       console.log(
-        `💾 BUSINESS CACHED (description): "${query}" in ${postalCode} -> ${descriptionBusinesses.length} businesses for 24h`
+        `💾 BUSINESS CACHED (description): "${query}" in ${locationKey} -> ${descriptionBusinesses.length} businesses for 24h`
       );
       console.log(
         `✅ CASCADING SEARCH SUCCESS: Found results by description search`
@@ -222,6 +244,10 @@ async function performCascadingSearch(
       return result;
     }
   } catch (error) {
+    const descriptionDuration = Date.now() - descriptionStartTime;
+    console.log(
+      `❌ DESCRIPTION SEARCH FAILED: ${descriptionDuration}ms - ${error}`
+    );
     // Continue to next search type if description search fails
   }
 
@@ -245,6 +271,12 @@ async function performCascadingSearch(
   const searchTermLower = query.toLowerCase();
   for (const [term, categories] of Object.entries(categoryMappings)) {
     if (searchTermLower.includes(term)) {
+      console.log(
+        `🏷️ ATTEMPTING: Category search for "${query}" -> categories: ${categories.join(
+          ", "
+        )}`
+      );
+      const categoryStartTime = Date.now();
       try {
         const categoryRequest = {
           ...baseRequestBody,
@@ -258,6 +290,10 @@ async function performCascadingSearch(
           password
         );
         const categoryBusinesses = extractBusinesses(categoryData);
+        const categoryDuration = Date.now() - categoryStartTime;
+        console.log(
+          `🏷️ CATEGORY SEARCH: ${categoryDuration}ms - Found ${categoryBusinesses.length} businesses`
+        );
 
         if (categoryBusinesses.length > 0) {
           // Extract pagination info from DataForSEO response
@@ -273,11 +309,12 @@ async function performCascadingSearch(
             totalCount,
             currentOffset,
             currentCount,
+            taskId: categoryData.tasks?.[0]?.id,
           };
-          // Cache the result for 24 hours
-          serverCache.set(cacheKey, result, 24 * 60 * 60 * 1000);
+          // Cache the result for 2 hours (fresher data)
+          serverCache.set(cacheKey, result, 2 * 60 * 60 * 1000);
           console.log(
-            `💾 BUSINESS CACHED (category): "${query}" in ${postalCode} -> ${categoryBusinesses.length} businesses for 24h`
+            `💾 BUSINESS CACHED (category): "${query}" in ${locationKey} -> ${categoryBusinesses.length} businesses for 24h`
           );
           console.log(
             `✅ CASCADING SEARCH SUCCESS: Found results by category search`
@@ -285,6 +322,10 @@ async function performCascadingSearch(
           return result;
         }
       } catch (error) {
+        const categoryDuration = Date.now() - categoryStartTime;
+        console.log(
+          `❌ CATEGORY SEARCH FAILED: ${categoryDuration}ms - ${error}`
+        );
         // Continue if category search fails
       }
     }
@@ -301,7 +342,7 @@ async function performCascadingSearch(
   // Cache empty results for 1 hour to prevent repeated API calls
   serverCache.set(cacheKey, result, 60 * 60 * 1000);
   console.log(
-    `💾 BUSINESS CACHED (empty): "${query}" in ${postalCode} -> 0 businesses for 1h`
+    `💾 BUSINESS CACHED (empty): "${query}" in ${locationKey} -> 0 businesses for 1h`
   );
   console.log(
     `❌ CASCADING SEARCH FAILED: No results found after trying title, description, and category`
@@ -341,20 +382,33 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse<BusinessSearchResult[]>>
 ) {
+  const requestStartTime = Date.now();
+
   if (req.method !== "POST") {
     return res
       .status(405)
       .json({ success: false, error: "Method not allowed" });
   }
 
-  const { query, postalCode, bypassCache, page = 1 } = req.body;
+  const {
+    query,
+    postalCode,
+    locationCoordinate,
+    bypassCache,
+    page = 1,
+  } = req.body;
 
   console.log(
     `\n🔍 SEARCH REQUEST: "${query}" ${
-      postalCode ? `in PLZ ${postalCode}` : "(no PLZ)"
+      postalCode
+        ? `in PLZ ${postalCode}`
+        : locationCoordinate
+        ? `at coordinates ${locationCoordinate}`
+        : "(no location)"
     } [Page ${page}]${bypassCache ? " [BYPASS CACHE]" : ""}`
   );
   console.log(`⏰ REQUEST TIME: ${new Date().toISOString()}`);
+  console.log(`🚀 REQUEST START: ${requestStartTime}ms`);
 
   if (!query) {
     console.log(`❌ SEARCH ERROR: No query provided`);
@@ -376,7 +430,13 @@ export default async function handler(
   if (!username || !password) {
     console.log("🔧 USING MOCK DATA - API credentials not available");
     console.log(
-      `🔍 Mock search: "${query}" in PLZ "${postalCode}" (Page ${page})`
+      `🔍 Mock search: "${query}" in ${
+        postalCode
+          ? `PLZ "${postalCode}"`
+          : locationCoordinate
+          ? `coordinates "${locationCoordinate}"`
+          : "no location"
+      } (Page ${page})`
     );
 
     // Generate mock pizza restaurants for PLZ 10963
@@ -509,12 +569,47 @@ export default async function handler(
   // END TEMPORARY MOCK DATA SECTION
 
   try {
-    // Handle postal code geocoding if provided
+    // Handle location - either postal code geocoding or direct coordinates
     let coordinates = null;
-    if (postalCode && postalCode.trim()) {
+    let locationIdentifier = "unknown";
+
+    if (locationCoordinate && locationCoordinate.trim()) {
+      // Direct coordinates provided (format: "lat,lng" or "lat,lng,radius")
+      console.log(`📍 USING DIRECT COORDINATES: "${locationCoordinate}"`);
+      const parts = locationCoordinate.split(",");
+      if (parts.length >= 2) {
+        coordinates = {
+          latitude: parseFloat(parts[0]),
+          longitude: parseFloat(parts[1]),
+        };
+        locationIdentifier = `coords_${parts[0]}_${parts[1]}`;
+        console.log(
+          `✅ COORDINATES PARSED: ${coordinates.latitude}, ${coordinates.longitude}`
+        );
+      } else {
+        console.log(`❌ INVALID COORDINATE FORMAT: "${locationCoordinate}"`);
+        return res.status(400).json({
+          success: false,
+          error: "Ungültiges Koordinatenformat",
+        });
+      }
+    } else if (postalCode && postalCode.trim()) {
+      // Postal code geocoding
+      const geocodingStartTime = Date.now();
+      console.log(`📍 GEOCODING START: PLZ "${postalCode}"`);
+      locationIdentifier = postalCode;
+
       try {
         coordinates = await geocodePostalCode(postalCode.trim());
+        const geocodingDuration = Date.now() - geocodingStartTime;
+        console.log(
+          `✅ GEOCODING SUCCESS: ${geocodingDuration}ms - Coordinates: ${coordinates?.latitude}, ${coordinates?.longitude}`
+        );
       } catch (geocodingError) {
+        const geocodingDuration = Date.now() - geocodingStartTime;
+        console.log(
+          `❌ GEOCODING FAILED: ${geocodingDuration}ms - ${geocodingError}`
+        );
         return res.status(400).json({
           success: false,
           error:
@@ -523,6 +618,10 @@ export default async function handler(
               : "Fehler bei der PLZ-Verarbeitung",
         });
       }
+    } else {
+      console.log(
+        `📍 LOCATION SKIPPED: No postal code or coordinates provided`
+      );
     }
 
     // Prepare base request body
@@ -530,20 +629,23 @@ export default async function handler(
       language_name: "German",
       limit: 5, // Reduced from 20 to 5 to reduce API costs
       order_by: ["rating.value,desc"], // Sort by rating
-      postalCode, // Add postal code for cache key generation
+      locationIdentifier, // Add location identifier for cache key generation
     };
 
     // Use coordinates if available, otherwise default to Germany
     if (coordinates) {
       baseRequestBody.location_coordinate = formatCoordinatesForDataForSeo(
         coordinates,
-        1
+        25 // 25km radius for city-wide search
       );
     } else {
       baseRequestBody.location_name = "Germany";
     }
 
     // Perform cascading search
+    const cascadingSearchStartTime = Date.now();
+    console.log(`🔍 CASCADING SEARCH START: "${query}"`);
+
     const {
       businesses: foundBusinesses,
       searchType,
@@ -558,6 +660,11 @@ export default async function handler(
       password,
       page,
       bypassCache
+    );
+
+    const cascadingSearchDuration = Date.now() - cascadingSearchStartTime;
+    console.log(
+      `🔍 CASCADING SEARCH COMPLETE: ${cascadingSearchDuration}ms - Found ${foundBusinesses.length} businesses via ${searchType}`
     );
 
     // If no businesses found, return error message
@@ -577,18 +684,21 @@ export default async function handler(
     const itemsPerPage = baseRequestBody.limit;
     const hasMore = currentOffset + currentCount < totalCount;
 
+    const totalRequestDuration = Date.now() - requestStartTime;
+
     console.log(
       `\n✅ SEARCH COMPLETE: Returning ${businesses.length} businesses`
     );
     console.log(
-      `📊 SEARCH SUMMARY: Query "${query}", PLZ ${
-        postalCode || "none"
+      `📊 SEARCH SUMMARY: Query "${query}", Location ${
+        locationIdentifier || "none"
       }, Found via ${searchType}`
     );
     console.log(
       `📄 PAGINATION: Total ${totalCount}, Offset ${currentOffset}, Count ${currentCount}, HasMore: ${hasMore}`
     );
-    console.log(`⏱️ RESPONSE READY\n`);
+    console.log(`⏱️ TOTAL REQUEST TIME: ${totalRequestDuration}ms`);
+    console.log(`🏁 RESPONSE READY\n`);
 
     res.status(200).json({
       success: true,
@@ -601,6 +711,9 @@ export default async function handler(
       },
     });
   } catch (error) {
+    const totalRequestDuration = Date.now() - requestStartTime;
+    console.log(`❌ SEARCH ERROR: ${totalRequestDuration}ms - ${error}`);
+
     res.status(500).json({
       success: false,
       error:

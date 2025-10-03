@@ -115,6 +115,90 @@ export async function geocodePostalCode(
 }
 
 /**
+ * Geocode a city name to coordinates using Nominatim API
+ * This is used when user selects a city from the autocomplete
+ * Results are cached server-side for 24 hours to reduce API calls
+ */
+export async function geocodeCity(
+  cityName: string,
+  country?: string
+): Promise<Coordinates | null> {
+  if (!cityName || cityName.trim().length === 0) {
+    return null;
+  }
+
+  const cleanedCityName = cityName.trim();
+  const searchQuery = country
+    ? `${cleanedCityName}, ${country}`
+    : cleanedCityName;
+
+  // Check cache first
+  const cacheKey = serverCache.generateGeocodingKey(
+    `city:${searchQuery.toLowerCase()}`
+  );
+  const cachedResult = serverCache.get<Coordinates>(cacheKey);
+
+  if (cachedResult) {
+    console.log(
+      `🟢 CITY GEOCODING CACHE HIT: ${searchQuery} -> ${cachedResult.latitude}, ${cachedResult.longitude}`
+    );
+    return cachedResult;
+  }
+
+  try {
+    console.log(
+      `🔴 CITY GEOCODING CACHE MISS: ${searchQuery} - calling Nominatim API`
+    );
+    console.log(
+      `📡 NOMINATIM API CALL: Fetching coordinates for city ${searchQuery}`
+    );
+
+    // Apply throttling
+    await throttler.throttle();
+
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+      searchQuery
+    )}&class=place&type=city,town,village&format=json&limit=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Rating-Calculator/1.0", // Required by Nominatim usage policy
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Geocoding API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data: NominatimResult[] = await response.json();
+
+    if (data.length === 0) {
+      throw new Error("Ort nicht gefunden. Bitte überprüfen Sie die Eingabe.");
+    }
+
+    const result = data[0];
+    const coordinates: Coordinates = {
+      latitude: parseFloat(result.lat),
+      longitude: parseFloat(result.lon),
+    };
+
+    // Cache the result for 24 hours
+    serverCache.set(cacheKey, coordinates, 24 * 60 * 60 * 1000);
+    console.log(
+      `✅ NOMINATIM SUCCESS: ${searchQuery} -> ${coordinates.latitude}, ${coordinates.longitude}`
+    );
+    console.log(`💾 CITY GEOCODING CACHED: Key "${cacheKey}" for 24 hours`);
+
+    return coordinates;
+  } catch (error) {
+    console.error(`❌ CITY GEOCODING ERROR: ${error}`);
+    throw error;
+  }
+}
+
+/**
  * Formats coordinates for DataForSEO API
  * Format: "latitude,longitude,radius" where radius is in kilometers
  */

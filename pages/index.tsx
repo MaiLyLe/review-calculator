@@ -63,6 +63,7 @@ const Home: NextPage = () => {
             <SearchForm
               onBusinessSelect={handleBusinessSelect}
               onSearchStateChange={handleSearchStateChange}
+              isEmployeeMode={isEmployeeMode}
             />
           )}
 
@@ -78,8 +79,8 @@ const Home: NextPage = () => {
         <Image
           src="/WS-Logo+Schrift-Blue.svg"
           alt="Company Logo"
-          width={150}
-          height={50}
+          width={200}
+          height={100}
           className={`${styles.logo} ${
             showSearchBackdrop ? styles.logoFixed : styles.logoRelative
           }`}

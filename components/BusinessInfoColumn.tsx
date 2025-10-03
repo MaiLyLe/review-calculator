@@ -37,24 +37,22 @@ export const BusinessInfoColumn: React.FC<BusinessInfoColumnProps> = ({
           <strong>{selectedBusiness.address}</strong>
         </Typography>
         <div className={styles.businessHeaderActions}>
-          {isEmployeeMode && (
-            <button
-              onClick={onRefreshRatings}
-              disabled={refreshingRatings || isRefreshThrottled}
-              className={styles.refreshButton}
-            >
-              {refreshingRatings ? (
-                <>
-                  <LoadingSpinner size="sm" color="#6b7280" />
-                  Aktualisiere...
-                </>
-              ) : isRefreshThrottled ? (
-                "⏱️ Warten..."
-              ) : (
-                "🔄 Aktuelle Ratings anfordern"
-              )}
-            </button>
-          )}
+          <button
+            onClick={onRefreshRatings}
+            disabled={refreshingRatings || isRefreshThrottled}
+            className={styles.refreshButton}
+          >
+            {refreshingRatings ? (
+              <>
+                <LoadingSpinner size="sm" color="#6b7280" />
+                Aktualisiere...
+              </>
+            ) : isRefreshThrottled ? (
+              "⏱️ Warten..."
+            ) : (
+              "🔄 Nicht aktuell? - Aktualisieren"
+            )}
+          </button>
         </div>
       </div>
 

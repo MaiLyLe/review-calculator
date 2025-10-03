@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Typography } from "@/components/Typography";
 import { SearchResults } from "@/components/SearchResults";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { useBusinessSearch } from "@/hooks/useBusinessSearch";
 import { BusinessSearchResult } from "@/types";
+import { CityOption } from "@/pages/api/cities";
 import { validateSearchQuery } from "@/utils/validate";
 import styles from "./SearchForm.module.css";
 
 interface SearchFormProps {
   onBusinessSelect: (business: BusinessSearchResult) => void;
   onSearchStateChange?: (hasResults: boolean) => void;
+  isEmployeeMode?: boolean;
 }
 
 export const SearchForm: React.FC<SearchFormProps> = ({
   onBusinessSelect,
   onSearchStateChange,
+  isEmployeeMode = false,
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [postalCode, setPostalCode] = useState("");
+  const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -29,10 +33,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({
   const [isThrottled, setIsThrottled] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
-  const [lastPostalCode, setLastPostalCode] = useState("");
-
-  // Check if this is employee mode
-  const isEmployeeMode = router.query["for-employees"] === "true";
+  const [lastSelectedCity, setLastSelectedCity] = useState<CityOption | null>(
+    null
+  );
+  const [cityBlurred, setCityBlurred] = useState(false);
 
   const {
     results,
@@ -75,9 +79,9 @@ export const SearchForm: React.FC<SearchFormProps> = ({
       return;
     }
 
-    // Postal code is only required for non-employee mode
-    if (!isEmployeeMode && !postalCode.trim()) {
-      setValidationError("PLZ ist erforderlich.");
+    // For normal users (non-employee mode), city selection is required
+    if (!isEmployeeMode && !selectedCity) {
+      setValidationError("Bitte wählen Sie einen Ort aus.");
       return;
     }
 
@@ -87,30 +91,51 @@ export const SearchForm: React.FC<SearchFormProps> = ({
     setLastSearchTime(now);
     setCurrentPage(1);
     setLastSearchQuery(searchQuery);
-    setLastPostalCode(postalCode);
-    await search(searchQuery, postalCode || "", 1);
+    setLastSelectedCity(selectedCity);
+
+    // Convert city to location string for the search API
+    const locationString = selectedCity
+      ? `${selectedCity.coordinates.latitude},${selectedCity.coordinates.longitude}`
+      : "";
+
+    await search(searchQuery, locationString, 1);
   };
 
-  console.log("showResults", showResults);
-
-  const handleBusinessSelect = (business: BusinessSearchResult) => {
-    onBusinessSelect(business);
-    // Reset all search-related state
-    setShowResults(false);
-    clearResults();
-    setSearchQuery("");
-    setPostalCode("");
-    setValidationError("");
-    setCurrentPage(1);
-    setLastSearchQuery("");
-    setLastPostalCode("");
-  };
+  const handleBusinessSelect = useCallback(
+    (business: BusinessSearchResult) => {
+      // Pass the business with the selected city information
+      const businessWithLocation = {
+        ...business,
+        selectedCity: selectedCity || undefined, // Convert null to undefined for type compatibility
+      };
+      onBusinessSelect(businessWithLocation);
+      // Reset all search-related state
+      setShowResults(false);
+      clearResults();
+      setSearchQuery("");
+      setSelectedCity(null);
+      setValidationError("");
+      setCurrentPage(1);
+      setLastSearchQuery("");
+      setLastSelectedCity(null);
+      setCityBlurred(false);
+    },
+    [onBusinessSelect, clearResults, selectedCity]
+  );
 
   const handlePageChange = async (page: number) => {
-    if (lastSearchQuery && (lastPostalCode || isEmployeeMode)) {
+    if (lastSearchQuery) {
       setCurrentPage(page);
-      await search(lastSearchQuery, lastPostalCode || "", page);
+      const locationString = lastSelectedCity
+        ? `${lastSelectedCity.coordinates.latitude},${lastSelectedCity.coordinates.longitude}`
+        : "";
+      await search(lastSearchQuery, locationString, page);
     }
+  };
+
+  // Handle city field blur for validation
+  const handleCityBlur = () => {
+    setCityBlurred(true);
   };
 
   // Set mounted state to prevent hydration issues
@@ -128,7 +153,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [results, searchLoading, showResults]);
+  }, [results, searchLoading, showResults, handleBusinessSelect]);
 
   // Hide results when there's an error or no results after search
   useEffect(() => {
@@ -156,6 +181,18 @@ export const SearchForm: React.FC<SearchFormProps> = ({
     }
   }, [results.length, searchLoading, showResults]);
 
+  // Handle city validation on blur or selection change
+  useEffect(() => {
+    if (!isEmployeeMode && cityBlurred && !selectedCity) {
+      setValidationError("Bitte wählen Sie einen Ort aus.");
+    } else if (selectedCity || isEmployeeMode) {
+      // Clear the error if city is selected or in employee mode
+      if (validationError === "Bitte wählen Sie einen Ort aus.") {
+        setValidationError("");
+      }
+    }
+  }, [selectedCity, cityBlurred, isEmployeeMode, validationError]);
+
   // Notify parent about search state changes
   useEffect(() => {
     const hasResults = showResults && (results.length > 0 || searchLoading);
@@ -172,8 +209,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({
         isSearchFormCentered ? styles.centered : styles.positioned
       }`}
     >
-      <Typography variant="h1">Rating Calculator</Typography>
-      <Typography variant="description">
+      <Typography variant="h1" className={styles.title}>
+        Rating Calculator
+      </Typography>
+      <Typography variant="description" className={styles.description}>
         Finden Sie raus, wie viele Google-Bewertungen entfernt werden müssen, um
         Ihr Wunsch-Rating zu erreichen.
       </Typography>
@@ -190,12 +229,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         <div className={styles.inputContainer}>
-          <Input
-            placeholder={isEmployeeMode ? "PLZ(optional)" : "PLZ"}
-            value={postalCode}
-            onChange={setPostalCode}
-            onEnter={handleSearch}
-            name="postalCode"
+          <CityAutocomplete
+            placeholder={isEmployeeMode ? "Ort (optional)" : "Ort *"}
+            value={selectedCity}
+            onChange={setSelectedCity}
+            onBlur={handleCityBlur}
+            name="city"
+            required={!isEmployeeMode}
           />
         </div>
 
@@ -204,8 +244,8 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           disabled={
             searchLoading ||
             !searchQuery ||
-            (!isEmployeeMode && !postalCode) ||
-            isThrottled
+            isThrottled ||
+            (!isEmployeeMode && !selectedCity)
           }
         >
           {searchLoading ? (

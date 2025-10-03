@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Typography } from "@/components/Typography";
 import { Slider } from "@/components/Slider";
 import { BusinessSearchResult, CalculationResult, ReviewStats } from "@/types";
@@ -29,6 +29,49 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
   const [threeStarSlider, setThreeStarSlider] = useState([0]);
   const [twoStarSlider, setTwoStarSlider] = useState([0]);
   const [oneStarSlider, setOneStarSlider] = useState([0]);
+
+  const calculateRatingFromSliders = useCallback(() => {
+    if (!ratingData) return null;
+
+    const totalReviews =
+      fiveStarSlider[0] +
+      fourStarSlider[0] +
+      threeStarSlider[0] +
+      twoStarSlider[0] +
+      oneStarSlider[0];
+    if (totalReviews === 0) return null;
+
+    const weightedSum =
+      fiveStarSlider[0] * 5 +
+      fourStarSlider[0] * 4 +
+      threeStarSlider[0] * 3 +
+      twoStarSlider[0] * 2 +
+      oneStarSlider[0] * 1;
+
+    const calculatedRating = weightedSum / totalReviews;
+
+    // Check if sliders are at their original values (max)
+    const isAtOriginalDistribution =
+      fiveStarSlider[0] === ratingData.rating_distribution.five_star &&
+      fourStarSlider[0] === ratingData.rating_distribution.four_star &&
+      threeStarSlider[0] === ratingData.rating_distribution.three_star &&
+      twoStarSlider[0] === ratingData.rating_distribution.two_star &&
+      oneStarSlider[0] === ratingData.rating_distribution.one_star;
+
+    // If sliders are at original distribution, return the actual rating to maintain consistency
+    if (isAtOriginalDistribution) {
+      return ratingData.rating;
+    }
+
+    return preciseRound(calculatedRating, 2); // Use precise rounding to 2 decimal places
+  }, [
+    ratingData,
+    fiveStarSlider,
+    fourStarSlider,
+    threeStarSlider,
+    twoStarSlider,
+    oneStarSlider,
+  ]);
 
   // Initialize sliders when rating data loads
   useEffect(() => {
@@ -82,6 +125,7 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
     twoStarSlider,
     oneStarSlider,
     ratingData,
+    calculateRatingFromSliders,
     targetRating,
   ]);
 
@@ -218,46 +262,11 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
 
     return {
       total,
-      percentage: preciseRound(percentage, 1), // Use precise rounding
+      percentage: preciseRound(percentage, 2), // Use precise rounding to 2 decimal places
     };
   };
 
   // Helper function to calculate what rating the current slider values would achieve
-  const calculateRatingFromSliders = () => {
-    if (!ratingData) return null;
-
-    const totalReviews =
-      fiveStarSlider[0] +
-      fourStarSlider[0] +
-      threeStarSlider[0] +
-      twoStarSlider[0] +
-      oneStarSlider[0];
-    if (totalReviews === 0) return null;
-
-    const weightedSum =
-      fiveStarSlider[0] * 5 +
-      fourStarSlider[0] * 4 +
-      threeStarSlider[0] * 3 +
-      twoStarSlider[0] * 2 +
-      oneStarSlider[0] * 1;
-
-    const calculatedRating = weightedSum / totalReviews;
-
-    // Check if sliders are at their original values (max)
-    const isAtOriginalDistribution =
-      fiveStarSlider[0] === ratingData.rating_distribution.five_star &&
-      fourStarSlider[0] === ratingData.rating_distribution.four_star &&
-      threeStarSlider[0] === ratingData.rating_distribution.three_star &&
-      twoStarSlider[0] === ratingData.rating_distribution.two_star &&
-      oneStarSlider[0] === ratingData.rating_distribution.one_star;
-
-    // If sliders are at original distribution, return the actual rating to maintain consistency
-    if (isAtOriginalDistribution) {
-      return ratingData.rating;
-    }
-
-    return preciseRound(calculatedRating, 1); // Use precise rounding to 1 decimal place
-  };
 
   // Helper function to test if a target rating is mathematically achievable by removing reviews
   const isTargetRatingAchievable = (targetRating: number): boolean => {
@@ -318,7 +327,7 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
     // Determine the final calculated target
     const finalCalculatedTarget = isAtOriginalDistribution
       ? ratingData.rating
-      : preciseRound(calculatedTarget, 1);
+      : preciseRound(calculatedTarget, 2);
 
     // If sliders are at original distribution, no removals are needed
     if (isAtOriginalDistribution) {
@@ -392,7 +401,7 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
       targetRating: finalCalculatedTarget,
       reviewsToRemove: removals,
       reviewsToAdd: { fiveStar: 0 },
-      projectedRating: preciseRound(projectedRating, 1),
+      projectedRating: preciseRound(projectedRating, 2),
       strategy: "remove" as const,
     };
   };
@@ -464,11 +473,11 @@ export const RatingControlsColumn: React.FC<RatingControlsColumnProps> = ({
           // If sliders are at original distribution, use the actual rating
           finalRating = ratingData.rating;
         } else {
-          finalRating = preciseRound(calculatedRating, 1);
+          finalRating = preciseRound(calculatedRating, 2);
         }
 
         // Update target rating to match what the sliders would achieve
-        setTargetRating(finalRating.toFixed(1));
+        setTargetRating(finalRating.toFixed(2));
 
         // Auto-recalculate the results immediately with current slider values
         const result = calculateRemovalsFromSliders(currentSliders);

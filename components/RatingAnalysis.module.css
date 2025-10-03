@@ -6,8 +6,8 @@
 /* Two-column layout for desktop */
 .analysisGrid {
   display: grid;
-  grid-template-columns: 1fr 1.8fr;
-  gap: 40px;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 80px;
   margin-top: 20px;
   min-height: calc(100vh - 180px);
   padding: 24px;
@@ -16,6 +16,41 @@
 .error {
   color: white;
   font-weight: 500;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  gap: 16px;
+}
+
+.loadingTitle {
+  color: white;
+  font-weight: 600;
+}
+
+.loadingDescription {
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 400px;
+}
+
+.spinner {
+  font-size: 48px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Mobile responsiveness */
@@ -32,5 +67,14 @@
 @media (min-width: 1024px) and (max-width: 1450px) {
   .analysisGrid {
     padding-bottom: 100px !important;
+  }
+}
+
+/* Large screens - override min-height to allow max-height constraints */
+@media (min-width: 1440px) {
+  .analysisGrid {
+    min-height: auto;
+    align-items: start;
+    max-height: 700px !important;
   }
 }

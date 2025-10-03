@@ -89,16 +89,6 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                   >
                     {business.address}
                   </Typography>
-                  {business.rating && business.reviews_count && (
-                    <div className={styles.ratingInfo}>
-                      <span className={styles.rating}>
-                        ⭐ {business.rating.toFixed(2)}
-                      </span>
-                      <span className={styles.reviewCount}>
-                        ({business.reviews_count} Bewertungen)
-                      </span>
-                    </div>
-                  )}
                 </div>
                 <div className={styles.selectArrow}>→</div>
               </div>
