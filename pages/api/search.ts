@@ -402,6 +402,10 @@ function transformBusinessListing(
     latitude: listing.latitude,
     longitude: listing.longitude,
     address_info: listing.address_info,
+    // Add fields to help users distinguish between businesses (e.g., store vs parking lot)
+    category: listing.category,
+    description: listing.description,
+    original_title: listing.original_title,
   };
 }
 
@@ -657,6 +661,17 @@ export default async function handler(
       limit: 5, // Reduced from 20 to 5 to reduce API costs
       order_by: ["rating.value,desc"], // Sort by rating
       locationIdentifier, // Add location identifier for cache key generation
+      // Simplified filters - let's start with just the most obvious parking-related terms
+      // We'll use category_ids for more precise filtering once we identify the right IDs
+      filters: [
+        ["category", "not_like", "%parking%"],
+        "and",
+        ["category", "not_like", "%Parking%"],
+        "and",
+        ["category", "not_like", "%Electric vehicle charging station%"],
+        "and",
+        ["category", "not_like", "%Bike sharing station%"],
+      ],
     };
 
     // Use coordinates if available, otherwise default to Germany
@@ -701,6 +716,27 @@ export default async function handler(
         error: `Keine Unternehmen mit dem Namen "${query}" gefunden.`,
       });
     }
+
+    // Debug: Log categories and category IDs to identify parking-related entries
+    console.log(`\n🔍 DEBUG: Categories and IDs found in results:`);
+    foundBusinesses.forEach((business, index) => {
+      console.log(`  ${index + 1}. "${business.title}"`);
+      console.log(`     Category: "${business.category}"`);
+      console.log(
+        `     Category IDs: [${business.category_ids?.join(", ") || "None"}]`
+      );
+
+      if (
+        business.category &&
+        business.category.toLowerCase().includes("park")
+      ) {
+        console.log(
+          `    ⚠️  PARKING DETECTED: "${business.category}" - IDs: [${
+            business.category_ids?.join(", ") || "None"
+          }]`
+        );
+      }
+    });
 
     // Transform businesses to our format
     const businesses: BusinessSearchResult[] = foundBusinesses.map(

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import { Typography } from "@/components/Typography";
 import { BusinessSearchResult } from "@/types";
+import { translateCategory } from "@/utils/clientCategoryTranslation";
 import styles from "./SearchResults.module.css";
 
 interface SearchResultsProps {
@@ -80,9 +81,18 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 }}
               >
                 <div className={styles.businessInfo}>
-                  <Typography variant="h3" className={styles.businessName}>
-                    {business.title}
-                  </Typography>
+                  <div className={styles.businessHeader}>
+                    <Typography variant="h3" className={styles.businessName}>
+                      {business.original_title || business.title}
+                    </Typography>
+                    {business.category && (
+                      <span className={styles.categoryBadge}>
+                        {translateCategory(business.category) ||
+                          business.category}
+                      </span>
+                    )}
+                  </div>
+
                   <Typography
                     variant="description"
                     className={styles.businessAddress}

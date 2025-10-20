@@ -13,6 +13,10 @@ export interface BusinessSearchResult {
     city?: string;
     country_code?: string;
   };
+  // Add fields to help users distinguish between businesses (e.g., store vs parking lot)
+  category?: string;
+  description?: string;
+  original_title?: string;
   selectedCity?: {
     name: string;
     coordinates: {
