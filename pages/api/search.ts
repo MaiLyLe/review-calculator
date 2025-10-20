@@ -88,6 +88,28 @@ function extractBusinesses(data: DataForSeoResponse): BusinessListing[] {
     if (task.result && task.result.length > 0) {
       const result = task.result[0];
       if (result.items && result.items.length > 0) {
+        // 🔍 BUSINESS SEARCH RESULTS:
+        console.log(`📊 FOUND ${result.items.length} BUSINESSES:`);
+        result.items.forEach((business, index) => {
+          console.log(`\n--- BUSINESS ${index + 1} ---`);
+          console.log(`📍 Name: ${business.title}`);
+          console.log(`📍 Address: ${business.address}`);
+          console.log(`📍 Category: ${business.category}`);
+          console.log(
+            `📍 Category IDs: ${business.category_ids?.join(", ") || "None"}`
+          );
+          console.log(
+            `📍 Category IDs: ${
+              business.additional_categories?.join(", ") || "None"
+            }`
+          );
+          console.log(
+            `📍 Coordinates: ${business.latitude}, ${business.longitude}`
+          );
+          console.log(`📍 CID: ${business.cid}`);
+          console.log(`📍 Place ID: ${business.place_id}`);
+        });
+
         return result.items;
       }
     }
@@ -375,6 +397,11 @@ function transformBusinessListing(
     rating: listing.rating?.value,
     reviews_count: listing.rating?.votes_count,
     rating_distribution,
+    // Add missing fields for CID + coordinates workflow
+    cid: listing.cid,
+    latitude: listing.latitude,
+    longitude: listing.longitude,
+    address_info: listing.address_info,
   };
 }
 

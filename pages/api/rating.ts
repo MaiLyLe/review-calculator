@@ -1,7 +1,243 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ReviewStats, ApiResponse } from "@/types";
-import { GoogleReviewsResponse, MyBusinessInfo } from "@/types/dataforseo";
+import {
+  GoogleReviewsResponse,
+  MyBusinessInfo,
+  BusinessListing,
+} from "@/types/dataforseo";
 import { serverCache } from "@/utils/cache";
+import fs from "fs";
+import path from "path";
+
+// Helper function to get location code from local CSV file
+async function getLocationCode(cityName: string): Promise<number | null> {
+  try {
+    const csvPath = path.join(process.cwd(), "dataforseo-locations.csv");
+
+    if (!fs.existsSync(csvPath)) {
+      console.log(`❌ LOCATIONS CSV NOT FOUND: ${csvPath}`);
+      return 2276; // Default to Germany
+    }
+
+    const csvContent = fs.readFileSync(csvPath, "utf-8");
+    const lines = csvContent.split("\n");
+
+    // Skip header row
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const [
+        locationCode,
+        locationName,
+        locationNameParent,
+        countryIsoCode,
+        locationType,
+      ] = line.split(",");
+
+      // Only look in German locations
+      if (countryIsoCode !== "DE") continue;
+
+      // Look for exact city match first
+      if (
+        locationName &&
+        locationName.toLowerCase().includes(cityName.toLowerCase()) &&
+        locationType === "City"
+      ) {
+        console.log(
+          `✅ FOUND EXACT CITY: ${cityName} = ${locationCode} (${locationName})`
+        );
+        return parseInt(locationCode);
+      }
+    }
+
+    // Fallback: look for any German location containing the city name
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const [
+        locationCode,
+        locationName,
+        locationNameParent,
+        countryIsoCode,
+        locationType,
+      ] = line.split(",");
+
+      // Only look in German locations
+      if (countryIsoCode !== "DE") continue;
+
+      if (
+        locationName &&
+        locationName.toLowerCase().includes(cityName.toLowerCase())
+      ) {
+        console.log(
+          `✅ FOUND FALLBACK LOCATION: ${cityName} = ${locationCode} (${locationName})`
+        );
+        return parseInt(locationCode);
+      }
+    }
+
+    console.log(
+      `❌ NO LOCATION CODE FOUND for: ${cityName} - using Germany default`
+    );
+    return 2276; // Default to Germany
+  } catch (error) {
+    console.log(`❌ LOCATIONS CSV ERROR: ${error} - using Germany default`);
+    return 2276; // Default to Germany
+  }
+}
+
+// Helper function to create reliable My Business Info request from Business Listing
+function createMyBusinessInfoRequest(businessListing: BusinessListing): {
+  language_name: string;
+  location_name?: string;
+  location_code?: number;
+  location_coordinate?: string;
+  keyword: string;
+} {
+  console.log(`\n🔄 CREATING MY BUSINESS INFO REQUEST:`);
+  console.log(`📍 Business: ${businessListing.title}`);
+  console.log(`📍 Address: ${businessListing.address}`);
+  console.log(
+    `📍 Coordinates: ${businessListing.latitude}, ${businessListing.longitude}`
+  );
+  console.log(`📍 CID: ${businessListing.cid}`);
+  console.log(`📍 Place ID: ${businessListing.place_id}`);
+
+  const locationCode = (businessListing as any).location_code;
+
+  // Strategy 1: Use CID with coordinates (most reliable for individual stores)
+  if (
+    businessListing.cid &&
+    businessListing.latitude &&
+    businessListing.longitude
+  ) {
+    const locationCoordinate = `${businessListing.latitude},${businessListing.longitude},1000`; // 1km radius
+
+    const requestParams = {
+      language_name: "German",
+      location_coordinate: locationCoordinate,
+      keyword: `cid:${businessListing.cid}`,
+    };
+
+    console.log(`✅ USING CID + COORDINATES STRATEGY (INDIVIDUAL STORE)`);
+    console.log(
+      `🚀 MY BUSINESS INFO API PARAMS:`,
+      JSON.stringify(requestParams, null, 2)
+    );
+
+    return requestParams;
+  }
+
+  // Strategy 2: Fallback to place_id if CID not available
+  if (
+    businessListing.place_id &&
+    businessListing.latitude &&
+    businessListing.longitude
+  ) {
+    const locationCoordinate = `${businessListing.latitude},${businessListing.longitude},1000`; // 1km radius
+
+    const requestParams = {
+      language_name: "German",
+      location_coordinate: locationCoordinate,
+      keyword: `place_id:${businessListing.place_id}`,
+    };
+
+    console.log(`✅ USING PLACE_ID + COORDINATES STRATEGY (FALLBACK)`);
+    console.log(
+      `🚀 MY BUSINESS INFO API PARAMS:`,
+      JSON.stringify(requestParams, null, 2)
+    );
+
+    return requestParams;
+  }
+
+  // Strategy 3: Last resort - use business name with location
+  const locationName = businessListing.address_info?.city
+    ? `${businessListing.address_info.city},${
+        businessListing.address_info.country_code || "Germany"
+      }`
+    : "Germany";
+
+  console.log(
+    `⚠️ USING NAME STRATEGY: "${businessListing.title}" with location: ${locationName}`
+  );
+
+  return {
+    language_name: "German",
+    location_name: locationName,
+    keyword: businessListing.title,
+  };
+}
+
+// Helper function to make a DataForSEO My Business Info API request with a pre-built request object
+async function getBusinessInfoFromMyBusinessAPIWithRequest(
+  requestBody: {
+    language_name: string;
+    location_name?: string;
+    location_code?: number;
+    location_coordinate?: string;
+    keyword: string;
+  },
+  apiUrl: string,
+  username: string,
+  password: string
+): Promise<GoogleReviewsResponse | null> {
+  console.log(`\n🚀 CALLING MY BUSINESS INFO API...`);
+  console.log(
+    `🔍 DEBUG: Request body being sent:`,
+    JSON.stringify([requestBody], null, 2)
+  );
+
+  const auth = Buffer.from(`${username}:${password}`).toString("base64");
+
+  const startTime = Date.now();
+  const response = await fetch(
+    `${apiUrl}business_data/google/my_business_info/live`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([requestBody]),
+    }
+  );
+
+  const duration = Date.now() - startTime;
+
+  if (!response.ok) {
+    console.log(
+      `❌ MY BUSINESS INFO API ERROR: ${response.status} ${response.statusText} (${duration}ms)`
+    );
+    throw new Error(
+      `My Business Info API error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data: GoogleReviewsResponse = await response.json();
+  console.log(`✅ API SUCCESS (${duration}ms)`);
+
+  // Log the business info returned
+  if (data.tasks && data.tasks[0]?.result?.[0]?.items?.[0]) {
+    const businessInfo = data.tasks[0].result[0].items[0];
+    console.log(`\n📊 MY BUSINESS INFO API RETURNED:`);
+    console.log(`📍 Business: ${businessInfo.title}`);
+    console.log(`📍 Address: ${businessInfo.address}`);
+    console.log(`📍 CID: ${businessInfo.cid}`);
+    console.log(`📍 Place ID: ${businessInfo.place_id}`);
+    console.log(
+      `📍 Rating: ${businessInfo.rating?.value} (${businessInfo.rating?.votes_count} reviews)`
+    );
+  }
+
+  if (data.status_code !== 20000) {
+    throw new Error(`My Business Info API error: ${data.status_message}`);
+  }
+
+  return data;
+}
 
 // Helper function to make a DataForSEO My Business Info API request with fallback variations
 async function getBusinessInfoFromMyBusinessAPI(
@@ -22,13 +258,21 @@ async function getBusinessInfoFromMyBusinessAPI(
     }
   }
 
-  // DataForSEO is being ridiculous - they reject their own location formats
-  // Always use just "Germany" to avoid 40501 errors with city names
-  cleanLocation = "Germany";
+  // Try to get the proper location code for the city
+  let locationCode = 2276; // Default to Germany
+  if (cleanLocation && cleanLocation !== "Germany") {
+    const cityName = cleanLocation.replace(",Germany", "");
+    const foundLocationCode = await getLocationCode(cityName);
+    if (foundLocationCode) {
+      locationCode = foundLocationCode;
+    }
+  }
 
+  // Try location_coordinate with coordinates if available, otherwise fallback
+  // Match the exact format from your working curl command
   const requestBody = {
     language_name: "German",
-    location_name: cleanLocation,
+    location_name: "Germany", // Fallback location
     keyword: businessName,
   };
 
@@ -37,6 +281,7 @@ async function getBusinessInfoFromMyBusinessAPI(
   );
   console.log(`📍 ORIGINAL LOCATION: "${location}"`);
   console.log(`📍 CLEANED LOCATION: "${cleanLocation}"`);
+  console.log(`📍 LOCATION CODE: ${locationCode}`);
   console.log(`📋 REQUEST BODY:`, JSON.stringify(requestBody, null, 2));
 
   const auth = Buffer.from(`${username}:${password}`).toString("base64");
@@ -104,36 +349,21 @@ function transformMyBusinessInfoToStats(
   reviewsData: GoogleReviewsResponse,
   place_id: string
 ): ReviewStats | null {
-  console.log(`🔄 TRANSFORMING MY BUSINESS INFO DATA:`);
-
   if (!reviewsData.tasks || reviewsData.tasks.length === 0) {
-    console.log(`❌ TRANSFORM ERROR: No tasks in response`);
     return null;
   }
 
   const task = reviewsData.tasks[0];
   if (!task.result || task.result.length === 0) {
-    console.log(`⚠️ NO RESULTS: Task completed but no business data available`);
-    console.log(
-      `   - Task Status: ${task.status_code} - ${task.status_message}`
-    );
     return null;
   }
 
   const result = task.result[0];
   if (!result.items || result.items.length === 0) {
-    console.log(`⚠️ NO BUSINESS ITEMS: No business info items found`);
     return null;
   }
 
   const businessInfo = result.items[0];
-  console.log(`📊 TRANSFORMING BUSINESS INFO DATA:`);
-  console.log(`   - Business Title: ${businessInfo.title}`);
-  console.log(`   - Place ID: ${businessInfo.place_id}`);
-  console.log(`   - CID: ${businessInfo.cid}`);
-  console.log(`   - Raw Rating: ${businessInfo.rating?.value}`);
-  console.log(`   - Raw Votes Count: ${businessInfo.rating?.votes_count}`);
-  console.log(`   - Rating Distribution:`, businessInfo.rating_distribution);
 
   // Transform rating distribution from Google Reviews format to our format
   let rating_distribution = {
@@ -145,10 +375,6 @@ function transformMyBusinessInfoToStats(
   };
 
   if (businessInfo.rating_distribution) {
-    console.log(
-      `📈 RAW RATING DISTRIBUTION:`,
-      businessInfo.rating_distribution
-    );
     rating_distribution = {
       five_star: businessInfo.rating_distribution["5"] || 0,
       four_star: businessInfo.rating_distribution["4"] || 0,
@@ -156,11 +382,6 @@ function transformMyBusinessInfoToStats(
       two_star: businessInfo.rating_distribution["2"] || 0,
       one_star: businessInfo.rating_distribution["1"] || 0,
     };
-    console.log(`📊 TRANSFORMED DISTRIBUTION:`, rating_distribution);
-  } else {
-    console.log(
-      `⚠️ NO DISTRIBUTION DATA: My Business Info API didn't provide rating_distribution`
-    );
   }
 
   const transformedStats = {
@@ -171,7 +392,6 @@ function transformMyBusinessInfoToStats(
     rating_distribution,
   };
 
-  console.log(`✅ FINAL TRANSFORMED STATS:`, transformedStats);
   return transformedStats;
 }
 
@@ -185,28 +405,58 @@ export default async function handler(
       .json({ success: false, error: "Method not allowed" });
   }
 
-  const { place_id, businessName, businessLocation, bypassCache } = req.body;
+  const {
+    place_id,
+    businessName,
+    businessLocation,
+    bypassCache,
+    businessListing,
+  } = req.body;
 
   console.log(
     `\n🔍 RATING REQUEST: place_id = "${place_id}", business = "${businessName}", location = "${businessLocation}"${
       bypassCache ? " [BYPASS CACHE]" : ""
-    }`
+    }${businessListing ? " [FROM BUSINESS LISTING]" : ""}`
   );
   console.log(`⏰ REQUEST TIME: ${new Date().toISOString()}`);
 
-  if (!place_id) {
-    console.log(`❌ RATING ERROR: No place_id provided`);
-    return res
-      .status(400)
-      .json({ success: false, error: "Place ID is required" });
-  }
+  // Handle new workflow: BusinessListing object passed directly
+  let finalBusinessName = businessName;
+  let finalBusinessLocation = businessLocation;
+  let finalPlaceId = place_id;
+  let myBusinessInfoRequest: any = null;
 
-  if (!businessName) {
-    console.log(`❌ RATING ERROR: No business name provided`);
-    return res.status(400).json({
-      success: false,
-      error: "Business name is required for My Business Info API",
-    });
+  if (businessListing) {
+    console.log(`🔄 USING BUSINESS LISTING WORKFLOW`);
+    console.log(
+      `🔍 DEBUG: businessListing object:`,
+      JSON.stringify(businessListing, null, 2)
+    );
+    myBusinessInfoRequest = createMyBusinessInfoRequest(businessListing);
+    finalBusinessName = businessListing.title;
+    finalBusinessLocation = businessListing.address;
+    finalPlaceId = businessListing.place_id;
+
+    console.log(
+      `📋 GENERATED REQUEST:`,
+      JSON.stringify(myBusinessInfoRequest, null, 2)
+    );
+  } else {
+    // Legacy workflow validation
+    if (!place_id) {
+      console.log(`❌ RATING ERROR: No place_id provided`);
+      return res
+        .status(400)
+        .json({ success: false, error: "Place ID is required" });
+    }
+
+    if (!businessName) {
+      console.log(`❌ RATING ERROR: No business name provided`);
+      return res.status(400).json({
+        success: false,
+        error: "Business name is required for My Business Info API",
+      });
+    }
   }
 
   // Get environment variables
@@ -247,40 +497,54 @@ export default async function handler(
 
   try {
     // Check cache first (unless bypassing)
-    const cacheKey = serverCache.generateRatingKey(place_id);
+    const cacheKey = serverCache.generateRatingKey(finalPlaceId);
 
     if (!bypassCache) {
       const cachedResult = serverCache.get<ReviewStats>(cacheKey);
 
       if (cachedResult) {
-        console.log(`🟢 RATING CACHE HIT: place_id "${place_id}"`);
+        console.log(`🟢 RATING CACHE HIT: place_id "${finalPlaceId}"`);
         console.log(`💾 CACHE KEY: ${cacheKey}`);
         return res.status(200).json({ success: true, data: cachedResult });
       }
 
       console.log(
-        `🔴 RATING CACHE MISS: place_id "${place_id}" - fetching from My Business Info API`
+        `🔴 RATING CACHE MISS: place_id "${finalPlaceId}" - fetching from My Business Info API`
       );
       console.log(`💾 CACHE KEY: ${cacheKey}`);
     } else {
       console.log(
-        `🔄 RATING CACHE BYPASS: place_id "${place_id}" - forcing fresh data from My Business Info API`
+        `🔄 RATING CACHE BYPASS: place_id "${finalPlaceId}" - forcing fresh data from My Business Info API`
       );
       console.log(`💾 CACHE KEY: ${cacheKey} (will be overwritten)`);
     }
 
-    // Get My Business Info data
-    const reviewsData = await getBusinessInfoFromMyBusinessAPI(
-      businessName,
-      businessLocation || "Germany",
-      apiUrl,
-      username,
-      password
-    );
+    // Get My Business Info data using the appropriate method
+    let reviewsData;
+    if (myBusinessInfoRequest) {
+      // New workflow: Use the optimized request from BusinessListing
+      console.log(`🚀 USING OPTIMIZED MY BUSINESS INFO REQUEST`);
+      reviewsData = await getBusinessInfoFromMyBusinessAPIWithRequest(
+        myBusinessInfoRequest,
+        apiUrl,
+        username,
+        password
+      );
+    } else {
+      // Legacy workflow: Use the old method
+      console.log(`🚀 USING LEGACY MY BUSINESS INFO REQUEST`);
+      reviewsData = await getBusinessInfoFromMyBusinessAPI(
+        finalBusinessName,
+        finalBusinessLocation || "Germany",
+        apiUrl,
+        username,
+        password
+      );
+    }
 
     if (!reviewsData) {
       console.log(
-        `❌ RATING ERROR: No reviews data returned for "${businessName}"`
+        `❌ RATING ERROR: No reviews data returned for "${finalBusinessName}"`
       );
       return res.status(500).json({
         success: false,
@@ -289,11 +553,11 @@ export default async function handler(
     }
 
     // Transform the live results immediately - no waiting needed!
-    let reviewStats = transformMyBusinessInfoToStats(reviewsData, place_id);
+    let reviewStats = transformMyBusinessInfoToStats(reviewsData, finalPlaceId);
 
     if (!reviewStats) {
       console.log(
-        `❌ RATING ERROR: No review data available for "${businessName}" - task still processing`
+        `❌ RATING ERROR: No review data available for "${finalBusinessName}" - task still processing`
       );
       return res.status(202).json({
         success: false,
@@ -305,11 +569,11 @@ export default async function handler(
     // Cache the result for 24 hours (fresh My Business Info data)
     serverCache.set(cacheKey, reviewStats, 24 * 60 * 60 * 1000);
     console.log(
-      `💾 RATING CACHED: place_id "${place_id}" for 24h (fresh My Business Info data)`
+      `💾 RATING CACHED: place_id "${finalPlaceId}" for 24h (fresh My Business Info data)`
     );
 
     console.log(
-      `\n✅ RATING COMPLETE: Retrieved fresh My Business Info data for "${businessName}"`
+      `\n✅ RATING COMPLETE: Retrieved fresh My Business Info data for "${finalBusinessName}"`
     );
     console.log(
       `📊 RATING SUMMARY: ${reviewStats.rating} stars, ${reviewStats.reviews_count} reviews`

@@ -37,6 +37,10 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
       console.log(
         `🔍 RATING ANALYSIS - Fetching fresh data for: ${selectedBusiness.title}`
       );
+      console.log(
+        `🔍 DEBUG: selectedBusiness object:`,
+        JSON.stringify(selectedBusiness, null, 2)
+      );
       setRatingData(null); // Clear old data to show loading
 
       try {
@@ -46,9 +50,7 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            place_id: selectedBusiness.place_id,
-            businessName: selectedBusiness.title,
-            businessLocation: selectedBusiness.selectedCity?.name || "Germany",
+            businessListing: selectedBusiness, // Pass the entire business object for new workflow
             bypassCache: false, // Use cache for initial load (24h cache)
           }),
         });
@@ -147,9 +149,7 @@ export const RatingAnalysis: React.FC<RatingAnalysisProps> = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          place_id: selectedBusiness.place_id,
-          businessName: selectedBusiness.title,
-          businessLocation: businessLocation,
+          businessListing: selectedBusiness, // Pass the entire business object for new workflow
           bypassCache: false, // Use cache to avoid unnecessary API calls
         }),
       });

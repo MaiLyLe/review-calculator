@@ -5,6 +5,14 @@ export interface BusinessSearchResult {
   rating?: number;
   reviews_count?: number;
   rating_distribution?: ReviewBreakdown;
+  // Add missing fields from BusinessListing for proper CID + coordinates workflow
+  cid?: string;
+  latitude?: number;
+  longitude?: number;
+  address_info?: {
+    city?: string;
+    country_code?: string;
+  };
   selectedCity?: {
     name: string;
     coordinates: {
