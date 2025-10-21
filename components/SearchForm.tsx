@@ -13,15 +13,32 @@ import { validateSearchQuery } from "@/utils/validate";
 import styles from "./SearchForm.module.css";
 
 interface SearchFormProps {
-  onBusinessSelect: (business: BusinessSearchResult) => void;
+  onBusinessSelect: (
+    business: BusinessSearchResult,
+    isSingleResult?: boolean
+  ) => void;
   onSearchStateChange?: (hasResults: boolean) => void;
   isEmployeeMode?: boolean;
+  initialSearchState?: {
+    query: string;
+    city: string;
+    page: number;
+  } | null;
+  onSearchStateUpdate?: (
+    state: {
+      query: string;
+      city: string;
+      page: number;
+    } | null
+  ) => void;
 }
 
 export const SearchForm: React.FC<SearchFormProps> = ({
   onBusinessSelect,
   onSearchStateChange,
   isEmployeeMode = false,
+  initialSearchState,
+  onSearchStateUpdate,
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,16 +116,19 @@ export const SearchForm: React.FC<SearchFormProps> = ({
       : "";
 
     await search(searchQuery, locationString, 1);
+
+    // Update search state in parent
+    updateSearchState(searchQuery, selectedCity, 1);
   };
 
   const handleBusinessSelect = useCallback(
-    (business: BusinessSearchResult) => {
+    (business: BusinessSearchResult, isSingleResult: boolean = false) => {
       // Pass the business with the selected city information
       const businessWithLocation = {
         ...business,
         selectedCity: selectedCity || undefined, // Convert null to undefined for type compatibility
       };
-      onBusinessSelect(businessWithLocation);
+      onBusinessSelect(businessWithLocation, isSingleResult);
       // Reset all search-related state
       setShowResults(false);
       clearResults();
@@ -130,6 +150,9 @@ export const SearchForm: React.FC<SearchFormProps> = ({
         ? `${lastSelectedCity.coordinates.latitude},${lastSelectedCity.coordinates.longitude}`
         : "";
       await search(lastSearchQuery, locationString, page);
+
+      // Update search state in parent
+      updateSearchState(lastSearchQuery, lastSelectedCity, page);
     }
   };
 
@@ -143,17 +166,77 @@ export const SearchForm: React.FC<SearchFormProps> = ({
     setIsMounted(true);
   }, []);
 
-  // Auto-select business if there's only one result
+  // Restore search state from URL parameters - only run once when initialSearchState changes
   useEffect(() => {
-    if (results.length === 1 && !searchLoading && showResults) {
+    if (initialSearchState && isMounted) {
+      console.log("🔄 RESTORING SEARCH STATE FROM URL:", initialSearchState);
+
+      setSearchQuery(initialSearchState.query);
+      setCurrentPage(initialSearchState.page);
+
+      // Parse city from string if available
+      let parsedCity: CityOption | null = null;
+      if (initialSearchState.city) {
+        try {
+          parsedCity = JSON.parse(initialSearchState.city);
+          setSelectedCity(parsedCity);
+        } catch (error) {
+          console.warn("Could not parse city data from URL:", error);
+        }
+      }
+
+      // Trigger search if we have a query
+      if (initialSearchState.query) {
+        setLastSearchQuery(initialSearchState.query);
+        setLastSelectedCity(parsedCity);
+        setShowResults(true);
+
+        // Perform the search
+        const locationString = parsedCity
+          ? `${parsedCity.coordinates.latitude},${parsedCity.coordinates.longitude}`
+          : "";
+
+        search(
+          initialSearchState.query,
+          locationString,
+          initialSearchState.page
+        );
+      }
+    }
+  }, [initialSearchState, isMounted, search]); // Include all dependencies but the effect logic prevents loops
+
+  // Update search state in parent component
+  const updateSearchState = useCallback(
+    (query: string, city: CityOption | null, page: number) => {
+      if (!onSearchStateUpdate) return;
+
+      const searchState = {
+        query,
+        city: city ? JSON.stringify(city) : "",
+        page,
+      };
+
+      onSearchStateUpdate(searchState);
+    },
+    [onSearchStateUpdate]
+  );
+
+  // Auto-select business if there's only one result (only on first page)
+  useEffect(() => {
+    if (
+      results.length === 1 &&
+      !searchLoading &&
+      showResults &&
+      currentPage === 1
+    ) {
       // Small delay to allow user to see the result briefly before auto-selecting
       const timer = setTimeout(() => {
-        handleBusinessSelect(results[0]);
+        handleBusinessSelect(results[0], true); // Pass true for single result
       }, 500); // 500ms delay for better UX
 
       return () => clearTimeout(timer);
     }
-  }, [results, searchLoading, showResults, handleBusinessSelect]);
+  }, [results, searchLoading, showResults, handleBusinessSelect, currentPage]);
 
   // Hide results when there's an error or no results after search
   useEffect(() => {
